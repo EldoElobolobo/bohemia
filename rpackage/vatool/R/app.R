@@ -661,16 +661,20 @@ app_server <- function(input, output, session) {
     }
     if(ok){
       message('about to run cod_choices')
+      vas <- va_choices$choices
+      
       choices <- cod_choices(country = cn)
+      
       fluidPage(
         fluidRow(
-          selectInput('cod_1', 'Select immediate cause of death', choices =c('', sort(unique(names(choices)))) , selected = ''),
-          selectInput('cod_2', 'Select intermediary cause of death', choices =c('', sort(unique(names(choices)))), selected = ''),
-          selectInput('cod_3', 'Select underlying cause of death', choices =c('', sort(unique(names(choices)))), selected = '')
-        ),
+          selectInput('cod_1', 'Select immediate cause of death', choices =c('', sort(unique(names(choices))))),
+          selectInput('cod_2', 'Select intermediary cause of death', choices =c('', sort(unique(names(choices))))),
+          selectInput('cod_3', 'Select underlying cause of death', choices =c('', sort(unique(names(choices))))),
+
         textAreaInput(inputId = 'phy_notes', label = 'Enter additional notes on cause of death', value = NULL),
-        fluidRow(
-          actionButton('submit_cod', 'Submit causes of death and notes')
+       
+        actionButton('submit_cod', 'Submit causes of death and notes')
+          
         )
       )
     } else {
@@ -782,9 +786,9 @@ app_server <- function(input, output, session) {
     } else {
       death_id = input$death_id
       # save(death_id, cod_1, cod_2, cod_3, cod_data, cod_names, file = 'temp_submit.rda')
-      cod_data$cod_1 = paste0(unlist(lapply(strsplit(cod_1,split = ' '), function(x) x[-1])), collapse = ' ')
-      cod_data$cod_2 = paste0(unlist(lapply(strsplit(cod_2,split = ' '), function(x) x[-1])), collapse = ' ')
-      cod_data$cod_3 = paste0(unlist(lapply(strsplit(cod_3,split = ' '), function(x) x[-1])), collapse = ' ')
+      cod_data$cod_1 = paste0(unlist(lapply(strsplit(input$cod_1,split = ' '), function(x) x[-1])), collapse = ' ')
+      cod_data$cod_2 = paste0(unlist(lapply(strsplit(input$cod_2,split = ' '), function(x) x[-1])), collapse = ' ')
+      cod_data$cod_3 = paste0(unlist(lapply(strsplit(input$cod_3,split = ' '), function(x) x[-1])), collapse = ' ')
       cod_data$death_id = death_id
       cod_data$time_stamp <- Sys.time()
       
