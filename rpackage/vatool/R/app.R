@@ -741,38 +741,41 @@ app_server <- function(input, output, session) {
       
       person <- person[, !grepl(remove_these, names(person))]
       # person <- person[,apply(person, 2, function(x) x != 'no')]
-      
-      person <- get_va_names(person, country = cn)
-      # remove columns with NA
-      person <- person[ , apply(person, 2, function(x) !any(is.na(x)))]
-      out <- as.data.frame(t(person))
-      out$Question <- rownames(out)
-      message('in va_table number of columns in va form ', ncol(out))
-      if(ncol(out)==2){
-        names(out) <- c('Answer', 'Question')
-        rownames(out) <- NULL
-        out <- out[, c('Question', 'Answer')]
+      if(nrow(person)!=0){
+        person <- get_va_names(person, country = cn)
+        
+        # remove columns with NA
+        person <- person[ , apply(person, 2, function(x) !any(is.na(x)))]
+        out <- as.data.frame(t(person))
+        out$Question <- rownames(out)
+        message('in va_table number of columns in va form ', ncol(out))
+        if(ncol(out)==2){
+          names(out) <- c('Answer', 'Question')
+          rownames(out) <- NULL
+          out <- out[, c('Question', 'Answer')]
+        } else {
+          out <- NULL
+        }
+        
       } else {
         out <- NULL
       }
-      
-    } else {
-      out <- NULL
-    }
-    if(!is.null(out)){
-      if(is.data.frame(out)){
-        DT::datatable(out, extensions = 'Buttons', options = list(dom = 'Bfrtip',
-                                          pageLength = nrow(out),
-                                          buttons = list(
-                                            list(extend = 'copy'),
-                                            list(extend = 'pdf',
-                                                 filename = pdf_file,
-                                                 title = pdf_title,
-                                                 header = FALSE)
-                                          )
-        ))
-        # databrew::prettify(out, nrows = nrow(out), download_options = TRUE)
+      if(!is.null(out)){
+        if(is.data.frame(out)){
+          DT::datatable(out, extensions = 'Buttons', options = list(dom = 'Bfrtip',
+                                                                    pageLength = nrow(out),
+                                                                    buttons = list(
+                                                                      list(extend = 'copy'),
+                                                                      list(extend = 'pdf',
+                                                                           filename = pdf_file,
+                                                                           title = pdf_title,
+                                                                           header = FALSE)
+                                                                    )
+          ))
+          # databrew::prettify(out, nrows = nrow(out), download_options = TRUE)
+        }
       }
+     
     }
     
   })
