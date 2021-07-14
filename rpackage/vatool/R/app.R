@@ -338,7 +338,8 @@ app_server <- function(input, output, session) {
         
         # get pdf title 
         pdf_file <- paste0('va_', idi)
-        pdf_title <- paste0('VA for ID ', idi)        # remove other columns
+        pdf_title <- paste0('VA for ID ', idi)   
+        # remove other columns
         remove_these <- "write your 3 digit|Id10007|server|first or given|the surname|name of VA|1	Manually write your 3 digit worker ID here|tz001|this_usernameTake a picture of the painted Household ID|isadult1|isadult2|isneonatal|isneonatal2|ischild1|ischild2|instancename|instance_id|device_id|end_time|start_time|todays_date|wid|Do you have a QR code with your worker ID?|wid|ageindays|ageindaysneonate|ageinmonths|ageinmonthsbyyear|ageinmonthsremain|ageinyears2|ageinyearsremain|The GPS coordinates represents|Collect the GPS coordinates of this location|Does the house you're at have a painted ID number on it?|hh_id|Write the 6 digit household ID here|id10007|id10008|id10009|id10010|id10010a|id10010b|id10011|id10013|id10017|id10018|id10018d|id10020|id10022|id10023|id10052|id10053|id10057|id10061|id10062|id10069|id10007|id10008|id10009|id10010|id10010a|id10010b|id10011|id10013|id10017|id10018|id10018d|id10020|id10022|id10023|id10052|id10053|id10057|id10061|id10062|id10069|id10458|id10459|id10462"
         
         # remove columns with NA
@@ -353,21 +354,23 @@ app_server <- function(input, output, session) {
           names(out) <- c('Answer', 'Question')
           rownames(out) <- NULL
           out <- out[, c('Question', 'Answer')]
+          DT::datatable(out, extensions = 'Buttons', options = list(dom = 'Bfrtip',
+                                                                    pageLength = nrow(out),
+                                                                    buttons = list(
+                                                                      list(extend = 'copy'),
+                                                                      list(extend = 'pdf',
+                                                                           filename = pdf_file,
+                                                                           title = pdf_title,
+                                                                           header = FALSE)
+                                                                    )
+          ))
         } else {
           out <- NULL
         }
       }
+      out
     } 
-    DT::datatable(out, extensions = 'Buttons', options = list(dom = 'Bfrtip',
-                                                              pageLength = nrow(out),
-                                                              buttons = list(
-                                                                list(extend = 'copy'),
-                                                                list(extend = 'pdf',
-                                                                     filename = pdf_file,
-                                                                     title = pdf_title,
-                                                                     header = FALSE)
-                                                              )
-    ))
+   
   })
   
   # table showing 
@@ -414,9 +417,7 @@ app_server <- function(input, output, session) {
         if(cn == 'Mozambique'){
           fluidPage(
             fluidRow(
-              column(12,
-                     h2('Causes of deaths from other physicians')
-              ),
+             
               column(9,
                      
                      h2('VA form'),
@@ -440,10 +441,9 @@ app_server <- function(input, output, session) {
         } else {
           fluidPage(
             fluidRow(
-              column(12,
-                     h2('Causes of deaths from other physicians')
-              ),
+              
               column(9,
+                     h2('Cause of death from other physicians'),
                      
                      div(class = "tableCard",
                          DT::dataTableOutput('adj_table_2')
@@ -460,7 +460,7 @@ app_server <- function(input, output, session) {
                          selectInput('adj_death_id', 'Select the VA ID', choices = death_id_choices),
                          selectInput('adj_cods', 'Select underlying cause of death',  choices = c('', sort(unique(names(cods_choices))))),
                          textAreaInput(inputId = 'adj_phy_notes', label = 'Enter additional notes on cause of death', value = NULL),
-                         actionButton('adj_submit_cod', 'Submit cause of death', '170px'),
+                         actionButton('adj_submit_cod', 'Submit cause of death', width = '170px'),
                          uiOutput('ui_submission_adj')
                      )
               )
@@ -508,21 +508,23 @@ app_server <- function(input, output, session) {
           names(out) <- c('Answer', 'Question')
           rownames(out) <- NULL
           out <- out[, c('Question', 'Answer')]
+          DT::datatable(out, extensions = 'Buttons', options = list(dom = 'Bfrtip',
+                                                                    pageLength = nrow(out),
+                                                                    buttons = list(
+                                                                      list(extend = 'copy'),
+                                                                      list(extend = 'pdf',
+                                                                           filename = pdf_file,
+                                                                           title = pdf_title,
+                                                                           header = FALSE)
+                                                                    )
+          ))
         } else {
           out <- NULL
         }
       }
+      out
     } 
-    DT::datatable(out, extensions = 'Buttons', options = list(dom = 'Bfrtip',
-                                                              pageLength = nrow(out),
-                                                              buttons = list(
-                                                                list(extend = 'copy'),
-                                                                list(extend = 'pdf',
-                                                                     filename = pdf_file,
-                                                                     title = pdf_title,
-                                                                     header = FALSE)
-                                                              )
-    ))
+  
   })
   
   # table showing 
