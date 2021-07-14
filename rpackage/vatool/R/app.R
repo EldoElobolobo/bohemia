@@ -335,6 +335,9 @@ app_server <- function(input, output, session) {
           pd <- pd %>% filter(grepl('ihi', server))
         }
         person <- pd %>% filter(death_id == idi)
+        
+        # get pdf title 
+        pdf_title <- paste0('VA ', idi)
         # remove other columns
         remove_these <- "write your 3 digit|Id10007|server|first or given|the surname|name of VA|1	Manually write your 3 digit worker ID here|tz001|this_usernameTake a picture of the painted Household ID|isadult1|isadult2|isneonatal|isneonatal2|ischild1|ischild2|instancename|instance_id|device_id|end_time|start_time|todays_date|wid|Do you have a QR code with your worker ID?|wid|ageindays|ageindaysneonate|ageinmonths|ageinmonthsbyyear|ageinmonthsremain|ageinyears2|ageinyearsremain|The GPS coordinates represents|Collect the GPS coordinates of this location|Does the house you're at have a painted ID number on it?|hh_id|Write the 6 digit household ID here|id10007|id10008|id10009|id10010|id10010a|id10010b|id10011|id10013|id10017|id10018|id10018d|id10020|id10022|id10023|id10052|id10053|id10057|id10061|id10062|id10069|id10007|id10008|id10009|id10010|id10010a|id10010b|id10011|id10013|id10017|id10018|id10018d|id10020|id10022|id10023|id10052|id10053|id10057|id10061|id10062|id10069|id10458|id10459|id10462"
         
@@ -355,8 +358,16 @@ app_server <- function(input, output, session) {
         }
       }
     } 
-
-    out
+    DT::datatable(out, extensions = 'Buttons', options = list(dom = 'Bfrtip',
+                                                              pageLength = nrow(out),
+                                                              buttons = list(
+                                                                list(extend = 'copy'),
+                                                                list(extend = 'pdf',
+                                                                     filename = pdf_title,
+                                                                     title = "VA",
+                                                                     header = FALSE)
+                                                              )
+    ))
   })
   
   # table showing 
@@ -480,7 +491,8 @@ app_server <- function(input, output, session) {
           pd <- pd %>% filter(grepl('ihi', server))
         }
         person <- pd %>% filter(death_id == idi)
-        save(person, file = 'temp_person.rda')
+        # get pdf title
+        pdf_title <- paste0('VA ', idi)
         # remove other columns
         remove_these <- "write your 3 digit|Id10007|server|first or given|the surname|name of VA|1	Manually write your 3 digit worker ID here|tz001|this_usernameTake a picture of the painted Household ID|isadult1|isadult2|isneonatal|isneonatal2|ischild1|ischild2|instancename|instance_id|device_id|end_time|start_time|todays_date|wid|Do you have a QR code with your worker ID?|wid|ageindays|ageindaysneonate|ageinmonths|ageinmonthsbyyear|ageinmonthsremain|ageinyears2|ageinyearsremain|The GPS coordinates represents|Collect the GPS coordinates of this location|Does the house you're at have a painted ID number on it?|hh_id|Write the 6 digit household ID here|id10007|id10008|id10009|id10010|id10010a|id10010b|id10011|id10013|id10017|id10018|id10018d|id10020|id10022|id10023|id10052|id10053|id10057|id10061|id10062|id10069|id10007|id10008|id10009|id10010|id10010a|id10010b|id10011|id10013|id10017|id10018|id10018d|id10020|id10022|id10023|id10052|id10053|id10057|id10061|id10062|id10069|id10458|id10459|id10462"
         
@@ -500,7 +512,16 @@ app_server <- function(input, output, session) {
         }
       }
     } 
-    out
+    DT::datatable(out, extensions = 'Buttons', options = list(dom = 'Bfrtip',
+                                                              pageLength = nrow(out),
+                                                              buttons = list(
+                                                                list(extend = 'copy'),
+                                                                list(extend = 'pdf',
+                                                                     filename = pdf_title,
+                                                                     title = "VA",
+                                                                     header = FALSE)
+                                                              )
+    ))
   })
   
   # table showing 
@@ -708,6 +729,9 @@ app_server <- function(input, output, session) {
         pd <- pd %>% filter(grepl('ihi', server))
       }
       person <- pd %>% filter(death_id == idi)
+      
+      # get pdf title
+      pdf_title = paste0('VA ', idi)
       # save(person, file = 'temp_person.rda')
       # remove other columns 
       remove_these <- "write your 3 digit|Id10007|server|first or given|the surname|name of VA|1	Manually write your 3 digit worker ID here|tz001|this_usernameTake a picture of the painted Household ID|isadult1|isadult2|isneonatal|isneonatal2|ischild1|ischild2|instancename|instance_id|device_id|end_time|start_time|todays_date|wid|Do you have a QR code with your worker ID?|wid|ageindays|ageindaysneonate|ageinmonths|ageinmonthsbyyear|ageinmonthsremain|ageinyears2|ageinyearsremain|The GPS coordinates represents|Collect the GPS coordinates of this location|Does the house you're at have a painted ID number on it?|hh_id|Write the 6 digit household ID here|id10007|id10008|id10009|id10010|id10010a|id10010b|id10011|id10013|id10017|id10018|id10018d|id10020|id10022|id10023|id10052|id10053|id10057|id10061|id10062|id10069|id10007|id10008|id10009|id10010|id10010a|id10010b|id10011|id10013|id10017|id10018|id10018d|id10020|id10022|id10023|id10052|id10053|id10057|id10061|id10062|id10069|id10458|id10459|id10462"
@@ -739,7 +763,7 @@ app_server <- function(input, output, session) {
                                           buttons = list(
                                             list(extend = 'copy'),
                                             list(extend = 'pdf',
-                                                 filename = 'va.pdf',
+                                                 filename = pdf_title,
                                                  title = "VA",
                                                  header = FALSE)
                                           )
