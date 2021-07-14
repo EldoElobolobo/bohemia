@@ -734,7 +734,17 @@ app_server <- function(input, output, session) {
     }
     if(!is.null(out)){
       if(is.data.frame(out)){
-        databrew::prettify(out, nrows = nrow(out))
+        DT::datatable(out, extensions = 'Buttons', options = list(dom = 'Bfrtip',
+                                          pageLength = nrow(out),
+                                          buttons = list(
+                                            list(extend = 'copy'),
+                                            list(extend = 'pdf',
+                                                 filename = 'va.pdf',
+                                                 title = "VA",
+                                                 header = FALSE)
+                                          )
+        ))
+        # databrew::prettify(out, nrows = nrow(out), download_options = TRUE)
       }
     }
     
