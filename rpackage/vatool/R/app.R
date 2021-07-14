@@ -381,7 +381,7 @@ app_server <- function(input, output, session) {
       idi <- input$adj_two_death_id
       
       if(!is.null(idi)){
-        out <- cods %>% filter(death_id == idi)
+        out <- table_cods$data %>% filter(death_id == idi)
       }
     }
     if(!is.null(out)){
@@ -535,7 +535,7 @@ app_server <- function(input, output, session) {
       idi <- input$adj_death_id
       
       if(!is.null(idi)){
-        out <- cods %>% filter(death_id == idi)
+        out <- table_cods$data %>% filter(death_id == idi)
       }
     } 
     names(out) <- c('User ID', 'Death ID', 'Immediate COD code', 'Immediate COD', 'Intermediary COD code', 'Intermediary COD', 'Underlying COD code', 'Underlying COD', 'Time stamp', 'Physician Notes')
@@ -601,7 +601,8 @@ app_server <- function(input, output, session) {
       } else {
         pd <- pd %>% filter(grepl('ihi', server))
       }
-      
+      # save(pd, file = 'temp_pd.rda')
+      country_ids <- unique(pd$death_id)
       liu <- input$log_in_user
       user <- users %>% dplyr::filter(username == tolower(liu))
       userid <- user %>% dplyr::filter(username == tolower(liu)) %>% .$user_id
@@ -624,7 +625,8 @@ app_server <- function(input, output, session) {
       
       # make sure user cant adjudicate a VA he already adjudicatd 
       # cods <- cods %>% filter(user_id != userid)
-      death_id_choices <- table_cods$data %>% 
+      death_id_choices <- table_cods$data%>% 
+        filter(death_id %in% country_ids) %>%
         group_by(death_id, cod_3) %>% 
         summarise(counts = n()) %>%
         group_by(death_id) %>% 
@@ -637,6 +639,7 @@ app_server <- function(input, output, session) {
       # get unresolved VAs
       # cods <- cods %>% filter(user_id != userid)
       death_id_choices <- table_cods$data %>% 
+        filter(death_id %in% country_ids) %>%
         group_by(death_id, cod_3) %>% 
         summarise(counts = n()) %>%
         group_by(death_id) %>% 
