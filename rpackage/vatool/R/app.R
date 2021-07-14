@@ -554,7 +554,7 @@ app_server <- function(input, output, session) {
                                adjudicator_two_choices = c())
   
   # Observe the log in, and upon log in, populate the roster of choices
-  observeEvent(c(input$log_in,input$country), {
+  observeEvent(c(input$log_in,input$country, input$submit_cod, input$adj_submit_cod), {
     message('JUST LOGGED IN')
     li <- logged_in()
     # if they just logged in, populate choices of deaht ids
@@ -587,7 +587,7 @@ app_server <- function(input, output, session) {
       # Removing already used VA ID from the list of the user
       choices <- setdiff(choices, out$death_id)
       # Removing VA IDs with more than one frequency  
-      frequency<-as.data.frame(table(cods$death_id))
+      frequency<-as.data.frame(table(table_cods$data$death_id))
       emit<-frequency %>% dplyr::filter(Freq > 1)
       choices <- setdiff(choices, emit$Var1)
       choices <- choices[!is.na(choices)]
@@ -781,9 +781,10 @@ app_server <- function(input, output, session) {
       submission_success(FALSE)
     } else {
       death_id = input$death_id
-      cod_data$cod_1 = cod_1
-      cod_data$cod_2 = cod_2
-      cod_data$cod_3 = cod_3
+      # save(death_id, cod_1, cod_2, cod_3, cod_data, cod_names, file = 'temp_submit.rda')
+      cod_data$cod_1 = paste0(unlist(lapply(strsplit(cod_1,split = ' '), function(x) x[-1])), collapse = ' ')
+      cod_data$cod_2 = paste0(unlist(lapply(strsplit(cod_2,split = ' '), function(x) x[-1])), collapse = ' ')
+      cod_data$cod_3 = paste0(unlist(lapply(strsplit(cod_3,split = ' '), function(x) x[-1])), collapse = ' ')
       cod_data$death_id = death_id
       cod_data$time_stamp <- Sys.time()
       
@@ -872,7 +873,7 @@ app_server <- function(input, output, session) {
       death_id = input$adj_death_id
       # save(cod_data,death_id, pn, cod_1, file = 'adj_temp.rda' )
       
-      cod_data$cod_3 = input$adj_cods
+      cod_data$cod_3 = paste0(unlist(lapply(strsplit(input$adj_cods,split = ' '), function(x) x[-1])), collapse = ' ')
       cod_data$death_id = death_id
       cod_data$time_stamp <- Sys.time()
       cod_data$doctor_note <- pn
@@ -885,6 +886,11 @@ app_server <- function(input, output, session) {
       old_choices <- va_choices$adjudicator_choices
       new_choices <- old_choices[!old_choices %in% death_id]
       va_choices$adjudicator_choices <- new_choices
+      
+      # add to cods table 
+      old_cods <- table_cods$data
+      new_cods <- rbind(old_cods, cod_data)
+      table_cods$data <- new_cods
     }
     
   })
@@ -918,7 +924,7 @@ app_server <- function(input, output, session) {
       adj_two_submission_success(FALSE)
     } else {
       death_id = input$adj_two_death_id
-      cod_data$cod_3 = input$adj_two_cods
+      cod_data$cod_3 = paste0(unlist(lapply(strsplit(input$adj_two_cods,split = ' '), function(x) x[-1])), collapse = ' ')
       cod_data$death_id = death_id
       cod_data$time_stamp <- Sys.time()
       cod_data$doctor_note <- pn
@@ -931,6 +937,11 @@ app_server <- function(input, output, session) {
       old_choices <- va_choices$adjudicator_two_choices
       new_choices <- old_choices[!old_choices %in% death_id]
       va_choices$adjudicator_two_choices <- new_choices
+      
+      # add to cods table 
+      old_cods <- table_cods$data
+      new_cods <- rbind(old_cods, cod_data)
+      table_cods$data <- new_cods
     }
     
   })

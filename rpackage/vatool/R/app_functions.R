@@ -92,7 +92,7 @@ cod_choices <- function(country){
   icd_codes <- icd_data$icd_codes
   icd_names <- icd_data$icd_names
   choices <- icd_codes
-  names(choices) <- icd_names
+  names(choices) <- paste0( icd_codes, ' ',icd_names)
   return(choices)
 }
 
