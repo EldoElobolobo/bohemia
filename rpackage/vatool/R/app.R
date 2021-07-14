@@ -630,21 +630,24 @@ app_server <- function(input, output, session) {
         group_by(death_id, cod_3) %>% 
         summarise(counts = n()) %>%
         group_by(death_id) %>% 
-        summarise(adj_counts = n()) %>% 
-        filter(adj_counts == 2) %>% 
+        summarise(agree_counts = sum(counts),
+                  adj_counts = n()) %>% 
+        filter(adj_counts == 2, agree_counts < 3) %>% 
         .$death_id
+      # death_id_choices <- unique(death_id_choices)
       
       va_choices$adjudicator_choices <- death_id_choices
       
       # get unresolved VAs
       # cods <- cods %>% filter(user_id != userid)
-      death_id_choices <- table_cods$data %>% 
+      death_id_choices <- table_cods$data%>% 
         filter(death_id %in% country_ids) %>%
         group_by(death_id, cod_3) %>% 
         summarise(counts = n()) %>%
         group_by(death_id) %>% 
-        summarise(adj_counts = n()) %>% 
-        filter(adj_counts == 3) %>% 
+        summarise(agree_counts = sum(counts),
+                  adj_counts = n()) %>% 
+        filter(adj_counts == 3, agree_counts < 4) %>% 
         .$death_id
       
       va_choices$adjudicator_two_choices <- death_id_choices
