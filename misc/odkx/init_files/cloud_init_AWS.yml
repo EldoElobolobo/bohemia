@@ -18,10 +18,11 @@ packages:
 write_files:
   - path: /home/ubuntu/script_to_run.sh
     permissions: '0755'
+    owner: ubuntu:ubuntu
     content: |
       #!/bin/sh
       docker swarm init
-      git clone --single-branch --branch sync-endpoint-setup https://github.com/databrew/bohemia.git
+      git clone --single-branch --branch sync-endpoint-setup https://github.com/databrew/bohemia.git sync-endpoint-default-setup
 
 runcmd:
   - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
