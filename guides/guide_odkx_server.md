@@ -49,6 +49,8 @@ Official documentation reference: https://docs.odk-x.org/sync-endpoint-cloud-set
 
 3. Skip the `Choose an Instance Type` step. Instead, click on the `3: Configure Instance` tab at the top and then click on the `As File` option in the `Advanced Details` section and then attach the `cloud_init_AWS.yml` file provided in the `misc/odkx/init_files` folder.
 
+   Note that if you're using a different platform or provider, you might need to modify the cloud-init configuration to match your environment. If your environment does not have cloud-init, you will need to perform the actions defined in the cloud-init configuration manually.
+
 4. (x1) Click on the `6. Configure Security Group` tab in order to modify the firewall rules and control the traffic for the instance.
 Create a new security group, name it `custom_security_group` and modify the rules to match the rules specified below, then click Review and Launch.
 
@@ -107,7 +109,7 @@ Create a new security group, name it `custom_security_group` and modify the rule
 - This will give instructions for connecting via an SSH client
 - It will be something very similar to the following:
 
-```
+```sh
 ssh -i "/home/joebrew/.ssh/pariskey.pem" ubuntu@ec2-13-36-9-244.eu-west-3.compute.amazonaws.com
 ```
 
@@ -115,7 +117,7 @@ ssh -i "/home/joebrew/.ssh/pariskey.pem" ubuntu@ec2-13-36-9-244.eu-west-3.comput
 
 #### (x4) Setting up an alias
 - If you want, create an alias such as:
-```
+```sh
 alias odkx='ssh -i "/home/joebrew/.ssh/pariskey.pem" ubuntu@ec2-13-36-9-244.eu-west-3.compute.amazonaws.com'
 ```
 - Add the above line to ~/.bashrc to persist
@@ -127,9 +129,10 @@ alias odkx='ssh -i "/home/joebrew/.ssh/pariskey.pem" ubuntu@ec2-13-36-9-244.eu-w
 - In domains.google.com, click on the purchased domain.
 - Click on "DNS" on the left
 - Go to "Custom resource records"
-- You're going to create two records:
+- You're going to create the following records:
   1. Name: @; Type: A; TTL 1h; Data: 13.36.9.244
-  2. Name: www; Type: CNAME; TTL: 1h; Data: ec2-18-218-151-100.us-east-2.compute.amazonaws.com.
+  2. Name: *; Type: CNAME; TTL: 1h; Data: ec2-18-218-151-100.us-east-2.compute.amazonaws.com.
+  3. [OPTIONAL] Instead of creating a wildcard record in [2], you could create a record for each Sync Endpoint instance you need.
 
 #### Connecting to your virtual machine
 
@@ -142,11 +145,15 @@ alias odkx='ssh -i "/home/joebrew/.ssh/pariskey.pem" ubuntu@ec2-13-36-9-244.eu-w
 4. Before running the launch scripts, check the logs to ensure that all the packages have been successfully installed, which should take about 2-3 minutes. The virtual machine may also reboot in this time.
 Use the following command to get into the log directory.
 
-    `cd /var/log`
+    ```bash
+    cd /var/log
+    ```
 
     Now, open the log file with command:
 
-    `tail cloud-init-output.log`
+    ```bash
+    tail cloud-init-output.log
+    ```
 
 5. If you see the message `The system is finally up, after X seconds` you can proceed to the next step! Otherwise, continue to wait and check the log again.
 
@@ -154,21 +161,105 @@ Use the following command to get into the log directory.
 
 1. In order to run the ODK-X launch scripts, first navigate back to the Ubuntu directory with the following command:
 
-    `cd /home/ubuntu`
+    ```bash
+    cd /home/ubuntu
+    ```
 
 2. Run the build scripts with the command:
 
-    `sudo ./script_to_run.sh`
+    ```bash
+    ./script_to_run.sh
+    ```
 
-The script will ask you for the server's domain and an administration email address to configure https on the server.
+The script downloads additional scripts need to setup Sync Endpoint and prepares Docker for running Sync Endpoint.
 
-After gathering this data the script will begin the install and you should see a bunch of statements executing in your console. Wait approximately 5-10 minutes for the installation to complete.
+3. Navigate to the directory with Sync Endpoint scripts:
 
-3. Once all the services have been created, check if all the services are running properly with the command:
+    ```bash
+    cd sync-endpoint-default-setup
+    ```
 
-    `sudo docker stack ls`
+4. The provided configuration sets up **2** Sync Endpoint instances. If you need additional instances, follow the steps below
 
-    You should see 9 services running under the name `syncldap`.
+    In this example, you will add a third Sync Endpoint instance in addition to the 2 already provided. See an example [here](https://github.com/databrew/bohemia/commit/d2f498f226ad0993ebea60fa5f36c161bc5acf66).
+
+   1. Make a copy of the following files: `docker-compose.sync-1.yml`, `config/nginx/sync-endpoint-1.conf`, and `config/web-ui/application-1.properties`
+
+      ```bash
+      cp docker-compose.sync-1.yml docker-compose.sync-3.yml
+
+      cp config/nginx/sync-endpoint-1.conf config/nginx/sync-endpoint-3.conf
+
+      cp config/web-ui/application-1.properties config/web-ui/application-3.properties
+      ```
+
+    2. Modify `docker-compose.sync-3.yml` to change `sync-1` to `sync-3`, `web-ui-1` to `web-ui-3`, and `application-1` to `application-3`
+
+    3. Modify `config/nginx/sync-endpoint-3.conf` to change `server_name sync-1.example.com;` to an appropriate domain name (e.g. `server_name sync-3.example.com;`), `sync-1` to `sync-3`, and `web-ui-1` to `web-ui-3`.
+
+    4. Modify `config/web-ui/application-3.properties` to change `sync-1` to `sync-3`.
+
+    5. Modify `docker-compose.yml` to include the new Sync Endpoint instance. The NGINX config for the new instance needs to be added to the `configs` section and linked to the NGINX service. See [this commit](https://github.com/databrew/bohemia/commit/d2f498f226ad0993ebea60fa5f36c161bc5acf66) for an example.
+
+5. Modify `config/nginx/sync-endpoint-1.conf` and `config/nginx/sync-endpoint-2.conf` to include your domain name.
+
+   - Locate the line that starts with `server_name `
+   - Replace the line with your domain, e.g. `server_name sync-1.example.com;`
+   - Each file must have a unique domain name.
+   - Remember your domain names, you will need to enter the same domain names in a few other places.
+
+6. Modify `docker-compose-https.yml` to include your domains.
+
+   - Locate the line `-d $$HTTPS_DOMAIN \` and replace the entire line with your domains. If my domains are `sync-1.example.com` and `sync-2.example.com`, I'd modify the line to be `-d sync-1.example.com -d sync-2.example.com \`
+   - Make sure this line is still aligned with the other lines after your edit.
+
+7. You are now ready to start provisioning your Sync Endpoint instances.
+
+   ```bash
+   ./init-odkx-sync-endpoint.py
+   ```
+
+   The script will ask you for the server's domain and an administration email address to configure https on the server. For the domain, enter all of the domains that you are going to use, seperate each domain with a single comma without space. E.g. `sync-1.example.com,sync-2.example.com`
+
+   After gathering this data the script will begin the install and you should see a bunch of statements executing in your console. Wait approximately 5-10 minutes for the installation to complete.
+
+8. Run the following commands 1 at a time.
+
+   Create a Docker overlay network for communication between NGINX and Sync Endpoint services.
+   ```bash
+   docker network create --opt encrypted --driver overlay bohemia-sync-network
+   ```
+
+   Create a Docker overlay network for commuication between Sync Endpoint services and LDAP services.
+   ```bash
+   docker network create --opt encrypted --driver overlay bohemia-ldap-network
+   ```
+
+   Deploy the LDAP stack.
+   ```bash
+   docker stack deploy -c docker-compose.ldap.yml bohemia-ldap
+   ```
+
+   Wait a few minutes for the LDAP stack to be ready, then deploy the first Sync Endpoint stack.
+   ```bash
+   docker stack deploy -c docker-compose.sync-1.yml bohemia-1
+   ```
+
+   Repeat the previous command for each Sync Endpoint instance replacing the argument appropriately. For example the second one should be `docker stack deploy -c docker-compose.sync-2.yml bohemia-2`
+
+   Wait 10-15 after your last command to make sure every Sync Endpoint instance is ready, then deploy the NGINX stack. Note that this command requires `sudo`.
+
+   ```bash
+   sudo docker stack deploy -c docker-compose.yml -c docker-compose-https.yml bohemia-nginx
+   ```
+
+9. Once all the services have been created, check if all the services are running properly with the command:
+
+    ```bash
+    docker stack ls
+    ```
+
+    You should see every stack deployed in the preivous step.
 
 #### Launching LDAP Admin
 
