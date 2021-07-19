@@ -521,12 +521,15 @@ team_aggs <- unique(team_df$team_agg)
 n_teams <- length(team_aggs)
 for(nn in 1:n_teams){
   out_list <- minicensus_data
-  the_server <- paste0('sync-', nn, '.',
+  the_server <- paste0('https://sync-', nn, '.',
                        server_root)
   this_team_agg <- team_aggs[nn]
   only_hamlets <- gpx %>%
     filter(team_agg == this_team_agg) %>%
     .$code
+  
+  message(length(only_hamlets), ' HAMLETS --------------')
+  
   
   # Subset to specific hamlets
   if(!is.null(only_hamlets)){

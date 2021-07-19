@@ -36,7 +36,8 @@ ts$lwr <- (ts$lwr + ts$pt) / 2
 ts$upr <- (ts$upr + ts$pt) / 2
 
 # Example of actual expenditure
-real <- c(10679.72)
+real <- c(10679.72, 16614.72)
+real <- cumsum(real)
 real <- c(real, rep(NA, 8-length(real)))
 ts$real <- real  #c(20000, 24100, 38000, 66000, 69000, 78000, NA, NA) * 1.3
 
