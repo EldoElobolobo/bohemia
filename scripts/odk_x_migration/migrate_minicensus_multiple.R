@@ -589,7 +589,8 @@ for(nn in 1:n_teams){
   # Write local csvs ready for upload to server
   format_to_odk_x(out_list = out_list, full_migration = FALSE, sample_hh = FALSE, truncate_name = FALSE)
   
-  
+  message('nn: ', nn, '. Sleeping 10 seconds --------------. About to purge')
+  Sys.sleep(10)
   # Purge the database
   purge_odkx_server(suitcase_dir = suitcase_dir,
                     jar_file = jar_file,
@@ -598,6 +599,8 @@ for(nn in 1:n_teams){
                     pass = creds$odkx_pass,
                     is_linux = is_linux)
   
+  message('nn: ', nn, '. Sleeping 10 seconds --------------. About to upload')
+  Sys.sleep(10)
   upload_forms_odkx_server(suitcase_dir = suitcase_dir,
                            jar_file = jar_file,
                            server_url = the_server, 
@@ -615,11 +618,15 @@ for(nn in 1:n_teams){
              'odk_x_hh.csv')
   paths <- paste0(getwd(), '/', paths)
   
+  message('nn: ', nn, '. Sleeping 10 seconds --------------. About to update')
+  Sys.sleep(10)
+  
   for(i in 1:length(the_tables)){
     this_table <- the_tables[i]
     this_path <- paths[i]
     x <- readr::read_csv(this_path)
-    message('NROWS: ', nrow(x))
+    message('Updating ', this_table, '. NROWS: ', nrow(x))
+    Sys.sleep(5)
     update_odkx_data(suitcase_dir = suitcase_dir,
                      jar_file = jar_file,
                      server_url = the_server, 
@@ -629,7 +636,6 @@ for(nn in 1:n_teams){
                      update_path = this_path,
                      is_linux = is_linux)
   }
-  
   
 }
 
