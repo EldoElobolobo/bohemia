@@ -18,12 +18,11 @@ packages:
 write_files:
   - path: /home/ubuntu/script_to_run.sh
     permissions: '0755'
+    owner: ubuntu:ubuntu
     content: |
       #!/bin/sh
       docker swarm init
-      git clone https://github.com/odk-x/sync-endpoint-default-setup.git
-      cd sync-endpoint-default-setup
-      python3 init-odkx-sync-endpoint.py
+      git clone --single-branch --branch sync-endpoint-setup https://github.com/databrew/bohemia.git sync-endpoint-default-setup
 
 runcmd:
   - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
@@ -32,6 +31,7 @@ runcmd:
   - apt-get install -y -m docker-ce docker-ce-cli containerd.io
   - systemctl start docker
   - systemctl enable docker
+  - usermod -aG docker ubuntu
 
 final_message: "The system is finally up, after $UPTIME seconds"
 
