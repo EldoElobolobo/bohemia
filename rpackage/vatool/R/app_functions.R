@@ -24,7 +24,7 @@ load_va_data <- function(is_local = FALSE,
   drv <- RPostgres::Postgres()
   if(get_new){
     if(is_local){
-
+      
       con <- dbConnect(drv = drv,
                        dbname = 'bohemia')
     } else {
@@ -55,7 +55,17 @@ get_va_names <- function(va_data, country = 'Tanzania'){
     if(any(this_col==tolower(va_names$name))){
       name_index <- which(this_col ==tolower(va_names$name))
       if(country == 'Tanzania'){
-        names(va_data)[i] <- as.character(va_names$label_english[name_index])
+        # names(va_data)[i] <- as.character(va_names$label_english[name_index])
+        if(!is.na(as.character(va_data[i])) & names(va_data)[i] %in% tolower(select_names)){
+          temp <- unique(va_choices$`label::Swahili`[as.character(va_data[i]) ==va_choices$name])
+          if(length(temp)>1){
+            ct <- nchar(temp) - nchar(va_data[i])
+            this_index <- which(ct == min(ct, na.rm = T))[1]
+            temp <- temp[this_index]
+          }
+          va_data[i] <- temp
+        }
+        names(va_data)[i] <- as.character(va_names$label_swahili[name_index])
       } else {
         if(!is.na(as.character(va_data[i])) & names(va_data)[i] %in% tolower(select_names)){
           temp <- unique(va_choices$`label::Portuguese`[as.character(va_data[i]) ==va_choices$name])
@@ -67,7 +77,7 @@ get_va_names <- function(va_data, country = 'Tanzania'){
           va_data[i] <- temp
         }
         names(va_data)[i] <- as.character(va_names$label_portuguese[name_index])
-
+        
       }
     }
   }

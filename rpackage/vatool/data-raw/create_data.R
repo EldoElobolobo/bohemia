@@ -3,12 +3,6 @@ dat <- read.csv('contact_info.csv')
 dat$X <- NULL
 usethis::use_data(dat, overwrite = TRUE)
 
-# get va form (For readable variable names)
-va_form <- read.csv('va_clean_names.csv', na.strings = c('NA'=''))
-va_form <- va_form %>% select(name, label_english = label..English, label_portuguese = label..Portuguese, label_swahili = label..Swahili)
-va_names <- va_form[complete.cases(va_form),]
-usethis::use_data(va_names, overwrite = TRUE)
-
 # new icd 10 data
 icd_por <- read.csv('icd10_portuguese.csv', stringsAsFactors = FALSE)
 icd_por$X <- NULL
@@ -53,6 +47,9 @@ usethis::use_data(icd_data_tza, overwrite = T)
 # read in va survey and choices 
 va_survey <- readr::read_csv('va_survey.csv')
 va_choices <- readr::read_csv('va_choices.csv')
+va_choices_ext <- readr::read_csv('va_choices_external.csv')
+va_choices_ext <- va_choices_ext %>% select(list_name, name, `label::English`, `label::Portuguese`, `label::Swahili`, country)
+va_choices <- rbind(va_choices, va_choices_ext)
 
 # get names of select_one and select_multiples
 select_names <- va_survey$name[grepl('select', va_survey$type)]
@@ -61,3 +58,15 @@ select_names <- select_names[!is.na(select_names)]
 usethis::use_data(va_survey, overwrite = T)
 usethis::use_data(va_choices, overwrite = T)
 usethis::use_data(select_names, overwrite = T)
+
+# get readable names from iD codes
+# get va form (For readable variable names)
+va_form <- read.csv('va_survey.csv', na.strings = c('NA'=''), stringsAsFactors = F)
+va_form <- va_form %>% select(name, label_english = label..English, label_portuguese = label..Portuguese, label_swahili = label..Swahili)
+# if swahili missing,fill with english
+va_form$label_swahili <- ifelse(is.na(va_form$label_swahili), va_form$label_english, va_form$label_swahili)
+va_form$label_portuguese <- ifelse(is.na(va_form$label_portuguese),
+                                   va_form$label_english, va_form$label_portuguese)
+va_names <- va_form[complete.cases(va_form),]
+usethis::use_data(va_names, overwrite = TRUE)
+
