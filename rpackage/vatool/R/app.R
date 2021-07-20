@@ -748,8 +748,8 @@ app_server <- function(input, output, session) {
       person <- person[, !grepl(remove_these, names(person))]
       # person <- person[,apply(person, 2, function(x) x != 'no')]
       if(nrow(person)!=0){
+        # save(person, file = 'person.rda')
         person <- get_va_names(person, country = cn)
-        
         # remove columns with NA
         person <- person[ , apply(person, 2, function(x) !any(is.na(x)))]
         out <- as.data.frame(t(person))
@@ -762,7 +762,6 @@ app_server <- function(input, output, session) {
         } else {
           out <- NULL
         }
-        
       } else {
         out <- NULL
       }
