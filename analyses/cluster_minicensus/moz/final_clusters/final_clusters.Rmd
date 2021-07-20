@@ -1,5 +1,5 @@
 ---
-title: "Mozambican clusters, ad-hoc analysis"
+title: "Bohemia. Final clusters. Mozambique"
 output: html_document
 ---
 
@@ -37,6 +37,15 @@ hh_level <- read_csv('hh_level.csv')
 status_level <- read_csv('status_level.csv')
 load('image.RData')
 load('../data.RData')
+# Create arms (just once)
+if(!'arm_assignments.csv' %in% dir()){
+  set.seed(123)
+  arm_assignments <- tibble(cluster = cluster_level$cluster)
+  assig_helper <- rep(1:3, each = 53)
+  assig_helper <- sample(assig_helper, length(assig_helper))
+  arm_assignments$assignment <- assig_helper
+  write_csv(arm_assignments, 'arm_assignments.csv')
+}
 ```
 
 ## How many hamlets are cluster-associated?
@@ -106,6 +115,6 @@ leaflet() %>%
   addProviderTiles(providers$Esri.WorldImagery) %>%
   addPolylines(data = yy, color = 'black') %>%
   addPolygons(data = xx,
-              popup = paste0('Cluster: ', xx@data$cluster, ' | Code: ', xx@data$code, ' | HH: ', xx@data$id),
+              popup = paste0('Cluster: ', xx@data$cluster),
               stroke = 1)
 ```
