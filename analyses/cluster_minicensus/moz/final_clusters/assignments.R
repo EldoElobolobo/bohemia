@@ -18,6 +18,7 @@ status_level <- read_csv('status_level.csv')
 load('image.RData')
 load('../data.RData')
 
+
 # Get the subset spatial objects
 if(!'final_spatial_data.RData' %in% dir()){
   set.seed(123)
@@ -63,31 +64,152 @@ if(!'ento_sentinel_clusters.csv' %in% dir()){
   }
   ento_sentinel_clusters <- bind_rows(out_list) %>%
     arrange(arm, cluster)
+  # Merge with neighborhood information
+  ento_sentinel_clusters <- left_join(ento_sentinel_clusters,
+                                      cluster_level %>% dplyr::select(cluster, hamlets))
   write_csv(ento_sentinel_clusters, 'ento_sentinel_clusters.csv')
 } else {
   ento_sentinel_clusters <- read_csv('ento_sentinel_clusters.csv')
 }
-# Show the sentinenl clusters
-xx <- spTransform(master_hull, proj4string(bohemia::mop2))
-yy <- spTransform(master_buf, proj4string(bohemia::mop2))
 
-
-l <- leaflet() %>%
-  addProviderTiles(providers$Stamen.Toner)
-
-cols <- c('red', 'blue', 'green')
-for(i in 1:3){
-  this <- ento_sentinel_clusters %>%
-    filter(arm == i)
-  z <- xx[xx$cluster %in% this$cluster,]
-  zz <- yy[yy$cluster %in% this$cluster,]
-  l <- l %>%
-    addPolygons(data = z,
-                color = cols[i],
-                popup = paste0('Cluster: ', z@data$cluster, '. Assignment arm: ', i)) %>%
-    addPolylines(data = zz,
-                color = cols[i])
+# Sentinel CDC light trap
+# From each of the 15 sentinel clusters, sample 4 households (ie, 60 total households), plus 2 "backup" households, clearly indicated as such (ie, 90 total households).
+# Deliverable 1: A table in which each row is one qualified non-refusing household, with columns indicating household ID, cluster, treatment arm, randomization number, randomization activity = "Sentinel CDC light trap", backup, Household head, list of members.
+if('sentinel_cdc_light_trap.csv' %in% dir()){
+  sentinel_cdc_light_trap <- read_csv('sentinel_cdc_light_trap.csv')
+} else {
+  out_list <- list()
+  set.seed(123)
+  for(i in 1:nrow(ento_sentinel_clusters)){
+    this_cluster <- ento_sentinel_clusters[i,]
+    this_cluster_number <- this_cluster$cluster
+    these_hh <- master_poly[master_poly@data$cluster == this_cluster_number,]
+    # randomly sample 6 households
+    sample_index <- sample(1:nrow(these_hh), nrow(these_hh)) # doing all instead of just 6
+    sample_hh <- these_hh[sample_index,]
+    sample_hh$sample_number <- 1:nrow(these_hh)
+    sample_hh$sample_type <- ifelse(sample_hh$sample_number %in% 1:4,
+                                    'Sentinel CDC light trap household',
+                                    'Sentinel CDC light trap backup')
+    sample_hh <- sample_hh@data
+    sample_hh <- sample_hh %>%
+      dplyr::select(cluster, randomization_number = sample_number,
+                    sample_type, lng, lat, n_members, n_adults, instance_id)
+    out_list[[i]] <- sample_hh
+  }
+  sample_hh <- bind_rows(out_list)
+  # Join with census data
+  census <- pd_moz$minicensus_main
+  people <- pd_moz$minicensus_people
+  sample_hh <- left_join(sample_hh,
+                         census %>% dplyr::select(instance_id, hh_head_id, hh_id))
+  sample_hh <- left_join(sample_hh,
+                         people %>% 
+                           mutate(num = as.character(num)) %>%
+                           dplyr::select(instance_id,
+                                         hh_head_id = num,
+                                         first_name,
+                                         last_name))
+  sample_hh <- sample_hh %>% dplyr::select(-hh_head_id,
+                                           -instance_id)
+  sentinel_cdc_light_trap <- sample_hh
+  sentinel_cdc_light_trap <- left_join(
+    sentinel_cdc_light_trap,
+    arm_assignments
+  )
+  sentinel_cdc_light_trap_only_6 <- sentinel_cdc_light_trap %>%
+    filter(randomization_number <= 6)
+  write_csv(sentinel_cdc_light_trap, 'sentinel_cdc_light_trap.csv')
+  write_csv(sentinel_cdc_light_trap_only_6, 'sentinel_cdc_light_trap_only_6.csv')
 }
-l
-library(htmltools)
-save_html(html = l, file = '~/Desktop/sentinelclustersmoz.html')
+
+
+# Random CDC Light trap households
+# (not to be confused with sentinel CDC light trap households)
+# -For each treatment arm, randomly sample 3 clusters (ie, 9 total clusters), but do not sample any households from the sentinel clusters.
+# From each sampled cluster, randomly sample 2 qualified non-refusing households (ie, 18 total households) plus 2 backups (ie, 36 total households) clearly indicated as such.
+# Repeat the above 15 times, so that there is a randomization for each of the 15 study months.
+# Deliverable: A table in which each row is one household-month combination, with columns indicating month_number, household ID, cluster, treatment arm, randomization number, randomization activity = "Random CDC Light trap households", backup.
+if('random_cdc_light_trap_households.csv' %in% dir()){
+  random_cdc_light_trap_households <- read_csv('random_cdc_light_trap_households.csv')
+} else {
+  set.seed(123)
+  # # -For each treatment arm, randomly sample 3 clusters (ie, 9 total clusters), but do not sample any households from the sentinel clusters.
+  # Get eligible clusters
+  arms <- 1:3; out_list <- list(); counter <- 0
+  for(a in arms){
+    counter <- counter + 1
+    out_list[[counter]] <- arm_assignments %>%
+      filter(assignment == a) %>%
+      filter(!cluster %in% ento_sentinel_clusters$cluster) %>%
+      sample_n(3)
+  }
+  random_cdc_light_trap_clusters <- bind_rows(out_list)
+  write_csv(random_cdc_light_trap_clusters, 'random_cdc_light_trap_clusters.csv')
+  # From each sampled cluster, randomly sample 2 qualified non-refusing households (ie, 18 total households) plus 2 backups (ie, 36 total households) clearly indicated as such.
+  out_list <- list(); counter <- 0
+  for(month_number in 1:15){
+    for(i in 1:nrow(random_cdc_light_trap_clusters)){
+      counter <- counter + 1
+      this_cluster <- random_cdc_light_trap_clusters[i,]
+      this_cluster_number <- this_cluster$cluster
+      these_hh <- master_poly[master_poly@data$cluster == this_cluster_number,]
+      # randomly sample 2+2 households
+      sample_index <- sample(1:nrow(these_hh), nrow(these_hh)) # doing all instead of just 4
+      sample_hh <- these_hh[sample_index,]
+      sample_hh$sample_number <- 1:nrow(these_hh)
+      sample_hh$sample_type <- ifelse(sample_hh$sample_number %in% 1:2,
+                                      'Random CDC light trap household',
+                                      'Random CDC light trap backup')
+      sample_hh <- sample_hh@data
+      sample_hh <- sample_hh %>%
+        dplyr::select(cluster, randomization_number = sample_number,
+                      sample_type, lng, lat)
+      sample_hh$month_number <- month_number
+      out_list[[counter]] <- sample_hh
+    }
+  }
+  
+  sample_hh <- bind_rows(out_list)
+  
+  random_cdc_light_trap_households <- sample_hh
+  random_cdc_light_trap_households <- left_join(
+    random_cdc_light_trap_households,
+    arm_assignments
+  )
+  random_cdc_light_trap_households_only_4 <- random_cdc_light_trap_households %>%
+    filter(randomization_number <= 4)
+  write_csv(random_cdc_light_trap_households, 'random_cdc_light_trap_households.csv')
+  write_csv(random_cdc_light_trap_households_only_4, 'random_cdc_light_trap_households_only_4.csv')
+}
+
+make_map <- FALSE
+if(make_map){
+  # Show the sentinenl clusters
+  xx <- spTransform(master_hull, proj4string(bohemia::mop2))
+  yy <- spTransform(master_buf, proj4string(bohemia::mop2))
+  
+  
+  l <- leaflet() %>%
+    addProviderTiles(providers$Stamen.Toner)
+  
+  cols <- c('red', 'blue', 'green')
+  for(i in 1:3){
+    this <- ento_sentinel_clusters %>%
+      filter(arm == i)
+    z <- xx[xx$cluster %in% this$cluster,]
+    zz <- yy[yy$cluster %in% this$cluster,]
+    l <- l %>%
+      addPolygons(data = z,
+                  color = cols[i],
+                  popup = paste0('Cluster: ', z@data$cluster, '. Assignment arm: ', i)) %>%
+      addPolylines(data = zz,
+                   color = cols[i])
+  }
+  l
+  library(htmltools)
+  save_html(html = l, file = '~/Desktop/sentinelclustersmoz.html')
+}
+
+# Make CDC random deliverable as per 
+# https://docs.google.com/document/d/1kAXh00E4blsHRWw5VyhxeKtbq1kEzCxqChO12qoPNZ0/edit#heading=h.5cd1aedbdpsg
