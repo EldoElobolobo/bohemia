@@ -1,0 +1,53 @@
+make_it <- function(){
+  library(devtools)
+  library(roxygen2)
+  library(rmarkdown)
+  library(usethis)
+  
+  usethis::use_package('grid')
+  usethis::use_package('scales')
+  usethis::use_package('grDevices')
+  usethis::use_package('DT')
+  usethis::use_package('lubridate')
+  usethis::use_package('ggplot2')
+  usethis::use_package('readxl')
+  usethis::use_package('RPostgreSQL')
+  usethis::use_package('devtools')
+  usethis::use_package('DBI')
+  usethis::use_package('RPostgres')
+  usethis::use_package('dismo')
+  usethis::use_package('dplyr')
+  usethis::use_package('gpclib')
+  usethis::use_package('gsheet')
+  usethis::use_package('maptools')
+  usethis::use_package('qrcode')
+  usethis::use_package('readr')
+  usethis::use_package('rgeos')
+  usethis::use_package('sp')
+  usethis::use_package('tidyr')
+  usethis::use_package('rmarkdown')
+  usethis::use_package('ggthemes')
+  usethis::use_package('leaflet')
+  usethis::use_package('maps')
+  usethis::use_package('Hmisc')
+  usethis::use_package('extrafont')
+    usethis::use_package('deldir')
+  usethis::use_package('kableExtra')
+  usethis::use_package('PKI')
+  
+  document()
+  # build
+  install()
+  # render('README.Rmd')
+}
+make_it()
+
+# setwd('vignettes')
+# render('vignette.Rmd')
+rebuild <- FALSE
+if(rebuild){
+  setwd('data-raw')
+  source('create_data_files.R')
+  setwd('..')
+  make_it()
+}

@@ -1,5 +1,6 @@
 ---
 title: "Incidents dashboard"
+runtime: shiny
 output: 
   flexdashboard::flex_dashboard:
     orientation: rows
@@ -39,42 +40,170 @@ suppressMessages({
 
 ```
 
+Row
+-------------------------------------
+    
+### Inputs
+
+```{r}
+selectInput('country', 'Country',
+            choices = c('Mozambique', 'Tanzania'))
+```
+
+
+```{r}
+the_choices <- sort(unique(c('accessibility_issue',
+                            'social_cultural_issue',
+                            'safety_issue',
+                            'community_resistance',
+                            'crime')))
+selectInput('type', 'Type',
+            choices = the_choices,
+            selected = the_choices,
+            multiple = TRUE)
+```
+
+
+```{r}
+
+```
+
+```{r}
+reactive_incidents <- reactive({
+  # Read in incidents data
+# To read most recent forms
+# Define the country
+country <- input$country #'Mozambique'
+if(country == 'Mozambique'){
+  iso <- 'MOZ'
+} else {
+  iso <- 'TZA'
+}
+
+if(iso == 'TZA'){
+  shp <- bohemia::ruf2
+} else {
+  shp <- bohemia::mop2
+}
+
+# Define some parameters for ODK-X retrieval
+download_dir <- '/home/joebrew/Documents/odkx_storage'
+
+briefcase_storage_dir <- download_dir <-
+  paste0(download_dir, '/', iso)
+
+jar_file_briefcase <- 'ODK-Briefcase-v1.18.0.jar'
+is_linux <- Sys.info()['sysname'] == 'Linux'
+keyfile = '../../credentials/bohemia_priv.pem'
+keyfile_public = '../../credentials/bohemia_pub.pem'
+
+
+library(readr)
+library(aws.s3)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(sp)
+library(bohemia)
+
+# Configure AWS bucket info
+
+# Read in credentials for S3 bucket
+s3creds <- read_csv('../../credentials/bohemiacensuss3credentials.csv')
+
+# Set environment variables for AWS s3
+Sys.setenv(
+  "AWS_ACCESS_KEY_ID" = s3creds$`Access key ID`,
+  "AWS_SECRET_ACCESS_KEY" = s3creds$`Secret access key`,
+  "AWS_DEFAULT_REGION" = "eu-west-3"
+)
+
+# Check the directory
+this_dir <- getwd()
+split_dir <- unlist(strsplit(this_dir, split = '/'))
+check <- split_dir[length(split_dir)] == 'incidents_dashboard' & split_dir[length(split_dir) - 1] == 'analyses' 
+if(!check){
+  message('YOU ARE IN THE WRONG DIRECTORY. MAKE SURE YOU ARE IN bohemia/scripts')
+}
+
+read_recent <- TRUE
+if(read_recent){
+  buck <- get_bucket(bucket = 'bohemiacensus',
+                     prefix = 'incidents')
+  
+  # Retrieve objects from s3
+  buck_names <- buck_times <-  c()
+  for(i in 1:length(buck)){
+    buck_names[i] <- buck[i]$Contents$Key
+    buck_times[i] <- buck[i]$Contents$LastModified
+  }
+  buck_df <- tibble(file = buck_names,
+                    date_time = buck_times) %>%
+    filter(grepl('incidents/', file))
+  buck_df_keep <- buck_df %>%
+    arrange(desc(date_time)) %>%
+    filter(grepl(country, file)) %>%
+    filter(date_time == dplyr::first(date_time))
+  
+  # Retrieve and save locally
+  if(nrow(buck_df_keep) > 0){
+    for(i in 1:nrow(buck_df_keep)){
+      this_file <- buck_df_keep$file[i]
+      this_object_name <- unlist(strsplit(this_file, '_'))[1]
+      local_file <- paste0(this_object_name, '.RData')
+      save_object(
+        object = this_file,
+        bucket = 'bohemiacensus',
+        file = local_file)
+      load(local_file, envir = .GlobalEnv) # load to main namespace
+      file.remove(local_file)
+    }
+  }
+}
+incidents <- incidents %>%
+  dplyr::distinct(`meta-instanceID`,
+                  .keep_all = TRUE) %>%
+    filter(type %in% input$type)
+incidents
+})
+```
 
 Row
 -------------------------------------
     
 ### Map
 
-(Interactive map of all incidents, coded by incident type. Click on a point to get more details. In final version, when you click on a point on this map, the table on the bottom right will show details on the incident in question)
-    
+
 ```{r}
+incidents <- reactive_incidents() %>%
+  mutate(type = `group_reason-kind_of_incident`) %>%
+    mutate(lng = `group_location-location-Longitude`,
+         lat = `group_location-location-Latitude`) %>%
+  mutate(type_other = `group_reason-other_kind_of_incident`) %>%
+  mutate(type = ifelse(!is.na(type_other), type_other, type)) %>%
+  mutate(x = lng,
+         y = lat) %>%
+  mutate(details = `group_reason-details`) %>%
+  mutate(wid = `group_intro-wid`)
+
 library(sp)
+pts <- incidents
 
-pts <- spsample(bohemia::ruf2, n = 40, 'random')
-pal <- rainbow(5)
-type_categories <- c('Danger', 'Transport difficulty', 'Cultural challenge')
-indexer <- sample(1:3, length(pts), replace = T)
-cols <- pal[indexer]
-types <- type_categories[indexer]
-make_hamlet_name <- function(){
-  paste0(sample(LETTERS, 3, replace = T), collapse = '')
-}
-hamlet_labels <- c()
-for(i in 1:length(pts)){
-  hamlet_labels[i] <- make_hamlet_name()
-}
-hamlet_names <- hamlet_labels
-hamlet_labels <- paste0(hamlet_labels, ': ', types)
-dates <- sample(seq(Sys.Date() - 100, Sys.Date(), 1),
-                length(pts), replace = T)
-dates <- format(dates, '%B %d, %Y')
-hamlet_labels <- paste0(hamlet_labels, '. ', dates)
+  
+coordinates(pts) <- ~x+y
+factpal <- colorFactor(topo.colors(length(unique(pts@data$type))), pts@data$type)
 
-leaflet() %>%
+
+leaflet(data = pts) %>%
   addProviderTiles(providers$OpenStreetMap) %>%
-  addPolylines(data = bohemia::ruf2) %>% addCircleMarkers(data = pts,
-                                                          color = cols,
-                                                          popup = hamlet_labels)
+  addPolylines(data = shp,
+               color = 'black',
+               weight = 0.5) %>% 
+  addCircleMarkers(data = pts,
+                  color = ~factpal(pts@data$type),
+                  popup = paste0(pts@data$SubmissionDate, '. ', pts@data$details) ) %>%
+    addLegend(pal = factpal, values = pts@data$type, opacity = 1)
+
 ```
    
 Row
@@ -82,30 +211,16 @@ Row
     
 ### Table of all incidents
 
-(In final version, when you click on a row in this table, the location on the map will get highlighted and the table to the right will show details on the incident in question)
     
 ```{r}
-df <- tibble(
-  Hamlet = hamlet_names,
-  Type = types,
-  Date = dates,
-  Details = 'Some details go here on the incident'
-)
+df <- incidents %>%
+  dplyr::select(SubmissionDate,
+                wid,
+                lng,
+                lat,
+                type, 
+                details,)
 databrew::prettify(df)
 ```
     
-### Details on selected incident
-
-
-```{r}
-df <- tibble(
-  Hamlet = hamlet_names,
-  Type = types,
-  Date = dates,
-  Details = 'Some details go here on the incident',
-  `FW` = 123,
-  `Time registered` = '12:03:15 AM'
-)
-t(df)
-```
-
+    
