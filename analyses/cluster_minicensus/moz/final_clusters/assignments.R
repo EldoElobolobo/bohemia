@@ -1,3 +1,5 @@
+# https://docs.google.com/document/d/1kAXh00E4blsHRWw5VyhxeKtbq1kEzCxqChO12qoPNZ0/edit#heading=h.5cd1aedbdpsg
+
 set.seed(123)
 library(sp)
 library(bohemia)
@@ -77,6 +79,8 @@ if(!'ento_sentinel_clusters.csv' %in% dir()){
 # Deliverable 1: A table in which each row is one qualified non-refusing household, with columns indicating household ID, cluster, treatment arm, randomization number, randomization activity = "Sentinel CDC light trap", backup, Household head, list of members.
 if('sentinel_cdc_light_trap.csv' %in% dir()){
   sentinel_cdc_light_trap <- read_csv('sentinel_cdc_light_trap.csv')
+  sentinel_cdc_light_trap_only_6 <- read_csv('sentinel_cdc_light_trap_only_6.csv')
+  
 } else {
   out_list <- list()
   set.seed(123)
@@ -126,7 +130,7 @@ if('sentinel_cdc_light_trap.csv' %in% dir()){
 
 # Random CDC Light trap households
 # (not to be confused with sentinel CDC light trap households)
-# -For each treatment arm, randomly sample 3 clusters (ie, 9 total clusters), but do not sample any households from the sentinel clusters.
+# -For each treatment arm, randomly sample 3 clusters (ie, 9 total clusters), but do not sample any of the sentinel clusters.
 # From each sampled cluster, randomly sample 2 qualified non-refusing households (ie, 18 total households) plus 2 backups (ie, 36 total households) clearly indicated as such.
 # Repeat the above 15 times, so that there is a randomization for each of the 15 study months.
 # Deliverable: A table in which each row is one household-month combination, with columns indicating month_number, household ID, cluster, treatment arm, randomization number, randomization activity = "Random CDC Light trap households", backup.
@@ -134,26 +138,32 @@ if('random_cdc_light_trap_households.csv' %in% dir()){
   random_cdc_light_trap_households <- read_csv('random_cdc_light_trap_households.csv')
 } else {
   set.seed(123)
-  # # -For each treatment arm, randomly sample 3 clusters (ie, 9 total clusters), but do not sample any households from the sentinel clusters.
-  # Get eligible clusters
-  arms <- 1:3; out_list <- list(); counter <- 0
-  for(a in arms){
-    counter <- counter + 1
-    out_list[[counter]] <- arm_assignments %>%
-      filter(assignment == a) %>%
-      filter(!cluster %in% ento_sentinel_clusters$cluster) %>%
-      sample_n(3)
-  }
-  random_cdc_light_trap_clusters <- bind_rows(out_list)
-  write_csv(random_cdc_light_trap_clusters, 'random_cdc_light_trap_clusters.csv')
+  
   # From each sampled cluster, randomly sample 2 qualified non-refusing households (ie, 18 total households) plus 2 backups (ie, 36 total households) clearly indicated as such.
-  out_list <- list(); counter <- 0
+  arms <- 1:3; out_list <- list(); counter <- 0; random_cdc_light_trap_clusters_list <- list(); 
   for(month_number in 1:15){
+    
+    # # -For each treatment arm, randomly sample 3 clusters (ie, 9 total clusters), but do not sample any households from the sentinel clusters.
+    # Get eligible clusters
+    this_month_list <- list()
+    month_counter <- 0
+    for(a in arms){
+      month_counter <- month_counter + 1
+      this_month_list[[month_counter]] <- arm_assignments %>%
+        filter(assignment == a) %>%
+        filter(!cluster %in% ento_sentinel_clusters$cluster) %>%
+        sample_n(3)
+    }
+    random_cdc_light_trap_clusters <- bind_rows(this_month_list)
+    random_cdc_light_trap_clusters$month_number <- month_number
+    random_cdc_light_trap_clusters_list[[month_number]] <- random_cdc_light_trap_clusters
+    
     for(i in 1:nrow(random_cdc_light_trap_clusters)){
       counter <- counter + 1
       this_cluster <- random_cdc_light_trap_clusters[i,]
       this_cluster_number <- this_cluster$cluster
       these_hh <- master_poly[master_poly@data$cluster == this_cluster_number,]
+      these_hh <- these_hh[these_hh$instance_id %in% pd_moz$minicensus_main$instance_id,]
       # randomly sample 2+2 households
       sample_index <- sample(1:nrow(these_hh), nrow(these_hh)) # doing all instead of just 4
       sample_hh <- these_hh[sample_index,]
@@ -163,14 +173,21 @@ if('random_cdc_light_trap_households.csv' %in% dir()){
                                       'Random CDC light trap backup')
       sample_hh <- sample_hh@data
       sample_hh <- sample_hh %>%
-        dplyr::select(cluster, randomization_number = sample_number,
+        dplyr::select(cluster, instance_id, randomization_number = sample_number,
                       sample_type, lng, lat)
       sample_hh$month_number <- month_number
       out_list[[counter]] <- sample_hh
     }
   }
+  random_cdc_light_trap_clusters <- bind_rows(random_cdc_light_trap_clusters_list)
+  write_csv(random_cdc_light_trap_clusters, 'random_cdc_light_trap_clusters.csv')
   
   sample_hh <- bind_rows(out_list)
+  sample_hh <- left_join(
+    sample_hh,
+      pd_moz$minicensus_main %>% dplyr::select(instance_id, hh_id) 
+    ) %>% dplyr::select(-instance_id)
+  
   
   random_cdc_light_trap_households <- sample_hh
   random_cdc_light_trap_households <- left_join(
@@ -211,5 +228,123 @@ if(make_map){
   save_html(html = l, file = '~/Desktop/sentinelclustersmoz.html')
 }
 
-# Make CDC random deliverable as per 
-# https://docs.google.com/document/d/1kAXh00E4blsHRWw5VyhxeKtbq1kEzCxqChO12qoPNZ0/edit#heading=h.5cd1aedbdpsg
+# Make geographic files for use in maps.me
+if(!dir.exists('geographic_files')){
+  dir.create('geographic_files')
+}
+
+# Define function for extracting geolocation
+extract_ll <- function(x){
+  splat <- strsplit(x, ' ')
+  lat <- as.numeric(unlist(lapply(splat, function(z){z[1]})))
+  lng <- as.numeric(unlist(lapply(splat, function(z){z[2]})))
+  tibble(lng, lat)
+}
+
+# BODIES OF WATER
+# 1 point for every household reporting any body of water, as per minicensus. 21 and 21a
+water <- pd_moz$minicensus_repeat_water %>%
+  left_join(pd_moz$minicensus_main %>% 
+              dplyr::select(instance_id, water_bodies_how_many, wid, hh_id,
+                            hh_geo_location)) %>%
+  mutate(hamlet_code = substr(hh_id, 1, 3))
+locs <- extract_ll(water$hh_geo_location)
+water <- bind_cols(water, locs)
+water$description <- water$water_bodies_type
+
+# LIVESTOCK ENCLSORUES
+# 1 point for every household reporting a livestock enclosure, as per minicensus. questions 19a and 19b in minicensus
+livestock <- pd_moz$minicensus_main %>%
+  mutate(hamlet_code = substr(hh_id, 1, 3)) %>%
+  dplyr::select(instance_id,
+                hamlet_code,
+                wid,
+                hh_id,
+                hh_geo_location,
+                # Cattle
+                hh_animals_distance_cattle_dry_season,
+                hh_animals_distance_cattle_rainy_season,
+                hh_animals_where_cattle_dry_season,
+                hh_animals_where_cattle_rainy_season,
+                # Pigs
+                hh_animals_dry_season_distance_pigs, 
+                hh_animals_rainy_season_distance_pigs,
+                hh_animals_rainy_season_pigs,
+                hh_animals_dry_season_pigs)
+locs <- extract_ll(livestock$hh_geo_location)
+livestock <- bind_cols(livestock, locs)
+livestock <- livestock %>%
+  filter(!is.na(hh_animals_rainy_season_pigs) |
+           !is.na(hh_animals_dry_season_pigs) |
+           !is.na(hh_animals_where_cattle_dry_season) |
+           !is.na(hh_animals_where_cattle_rainy_season)) %>%
+  mutate(description = 
+           paste0(
+             ifelse(!is.na(hh_animals_dry_season_pigs),
+                    paste0('Pigs in dry season: ', hh_animals_dry_season_pigs, '. '),
+                    ''),
+             ifelse(!is.na(hh_animals_rainy_season_pigs),
+                           paste0('Pigs in rainy season: ', hh_animals_dry_season_pigs, '. '),
+                           ''),
+             ifelse(!is.na(hh_animals_where_cattle_rainy_season),
+                    paste0('Cattle in rainy season: ', hh_animals_where_cattle_rainy_season, '. '),
+                    ''),
+             ifelse(!is.na(hh_animals_where_cattle_dry_season),
+                    paste0('Cattle in dry season: ', hh_animals_where_cattle_dry_season, '. '),
+                    '')
+           ))
+
+# Combine the livestock and water
+livestock <- livestock %>%
+  dplyr::select(hh_id,
+                description,
+                hamlet_code,
+                wid,
+                lng,
+                lat) %>%
+  mutate(type = 'Livestock enclosure')
+water <- water %>%
+  dplyr::select(description,
+                hamlet_code,
+                wid,
+                hh_id,
+                lng,
+                lat) %>%
+  mutate(type = 'Body of water')
+households <- 
+  sentinel_cdc_light_trap_only_6 %>%
+  mutate(month_number = 'not applicable (sentinel)') %>%
+  dplyr::select(hh_id,
+                lng,
+                lat,
+                month_number,
+                randomization_number) %>%
+  mutate(type = 'Household: Sentinel CDC light trap') %>%
+  bind_rows(
+    random_cdc_light_trap_households_only_4 %>%
+      mutate(month_number = as.character(month_number)) %>%
+      dplyr::select(hh_id,
+                    lng,
+                    lat,
+                    month_number,
+                    randomization_number) %>%
+      mutate(type = 'Household: Random CDC light trap') 
+  )
+# Write locations files
+write_kml <- function(df, file_path,
+                      layer){
+  require(sp)
+  require(rgdal)
+  df <- df %>% filter(!is.na(lng),
+                      !is.na(lat))
+  coordinates(df) <- ~lng+lat
+  proj4string(df) <- CRS("+proj=longlat +datum=WGS84")
+  writeOGR(df, file_path, layer=layer, driver="KML") 
+}
+# write_kml(df = livestock,
+#           file_path = 'geographic_files/livestock.kml',
+#           layer = 'livestock')
+write_csv(livestock, 'geographic_files/livestock.csv')
+write_csv(households, 'geographic_files/households.csv')
+write_csv(water, 'geographic_files/water.csv')
+# These are manually converted to kmls at https://www.google.com/maps/d/u/0/
