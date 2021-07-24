@@ -517,10 +517,10 @@ if(file_name %in% dir()){
 
 
 # Loop through each instance / area
-team_aggs <- unique(team_df$team_agg)
+team_aggs <- c(2, 1, 3) # unique(team_df$team_agg)
 n_teams <- length(team_aggs)
-n_teams <- 1 # DELETE THIS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-for(nn in 1:n_teams){
+n_teams <- 3 
+for(nn in team_aggs){
   out_list <- minicensus_data
   the_server <- paste0('https://sync-', nn, '.',
                        server_root)
@@ -530,7 +530,9 @@ for(nn in 1:n_teams){
     .$code
   
   message(length(only_hamlets), ' HAMLETS --------------')
-  
+  guide_csv <- tibble(server = the_server,
+                      code = sort(unique(only_hamlets)))
+  write_csv(guide_csv, paste0('~/Desktop/hamlets_endpoint_',nn, '.csv' ))
   
   # Subset to specific hamlets
   if(!is.null(only_hamlets)){

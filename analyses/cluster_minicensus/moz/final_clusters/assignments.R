@@ -136,6 +136,7 @@ if('sentinel_cdc_light_trap.csv' %in% dir()){
 # Deliverable: A table in which each row is one household-month combination, with columns indicating month_number, household ID, cluster, treatment arm, randomization number, randomization activity = "Random CDC Light trap households", backup.
 if('random_cdc_light_trap_households.csv' %in% dir()){
   random_cdc_light_trap_households <- read_csv('random_cdc_light_trap_households.csv')
+  random_cdc_light_trap_clusters <- read_csv('random_cdc_light_trap_clusters.csv')
 } else {
   set.seed(123)
   
