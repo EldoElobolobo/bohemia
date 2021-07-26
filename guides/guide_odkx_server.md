@@ -302,6 +302,7 @@ When you have created a user, you need to add the user to the respective group f
 
 3. Click on `Add new attribute` which should show a pull-down menu and then select `memberUid`.
 4. Enter the `memberUid` of the user, _this is the 'username' you created_, and then update the object.
+5. Do the same for other gidNumbers of relevance.
 
 #### Creating Admin User
 
@@ -338,6 +339,7 @@ Repeat the steps to add the user to the following groups
 - `gidNumber=501` -- `default_prefix administer_tables`
 - `gidNumber=503` -- `default_prefix synchronize_tables`
 - `gidNumber=504` -- `default_prefix form_managers`
+- (etc)
 
 Note: The final view when the admin user logs in to the server should be similar to:
 
@@ -345,7 +347,7 @@ Note: The final view when the admin user logs in to the server should be similar
 
 #### create admin user
 
-click ou=people, create a child entry, just like above, but instead of data / data make it dbrew / admin (uid 1001) and make `default_prefix_super_user_tables`
+click ou=people, create a child entry, just like above, but instead of data / data make it something else and make `default_prefix_super_user_tables`
 - go to gidnumber=502, click add new attribute, member uid, dbrew
 - do same for all numbers for dbrew
 
@@ -381,25 +383,3 @@ _After creating the users required, there is no longer need access to the LDAP a
 ### Source Code References
 
 - https://github.com/odk-x/sync-endpoint-default-setup
-
-### Outstanding Tasks
-
-- [ ] Production set up for the LDAP as advised in the [Advanced LDAP](https://github.com/odk-x/sync-endpoint-default-setup#warnings)
-
-## Set Up more instances of the service and subdomains
-
-Follow the instructions in the section [ODK-X Cloud Endpoints](#odk-x-cloud-endpoints) with the following exceptions (wherever I use big letter N, you should use the consecutive number of the instance, e.g. 1):
-
-- (x1) In the `6. Configure Security Group` tab, the name of the security group should be `custom_security_group_N` (where N is the consecutive number of the instance).
-- (x2) Instead of the section about configuring a key pair, choose the option "Select an existing key pair" and select it instead of generating a new one.
-- (x3) Do not set up an Elastic IP. Although it will cost less than $5 per month per instance, it's not needed because we can use CNAME record for the subdomain (which will slightly slow down establishing the connection to the server, but it shouldn't be noticeable)
-- (x4) Instead of "odkx" use "odkxN" (where N is the consecutive number of the instance)
-- (x5) Instead of setting up the domain, we will set up subdomains:
-  1. On AWS click the EC2 instance that you want to add subdomain for and click "Connect", under "SSH Client", you'll have the point "Connect to your instance using its Public DNS" (it will look like: "ec2-18-119-5-153.us-east-2.compute.amazonaws.com"), I'll refer to it as INSTANCE_URL from now on
-  2. Choose your domain on the domains.google.com
-  3. Click "DNS" in the left menu
-  4. Scroll to "Custom resource records"
-  5. In the first field add the name of the domain (e.g. "a")
-  6. In the second field select "CNAME"
-  7. In the last field ("Domain name") put the INSTANCE_URL from the first point.
-  8. Click "Add". The subdomain (e.g. a.domain.com) should be available within an hour.
