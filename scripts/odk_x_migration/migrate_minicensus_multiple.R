@@ -563,7 +563,7 @@ if(file_name %in% dir()){
 
 nn_list <- list()
 # Loop through each instance / area
-team_aggs <- 2:5# sort(unique(team_data$team_agg))
+team_aggs <- sort(unique(team_data$team_agg))
 for(nn in team_aggs){
   out_list <- minicensus_data
   the_server <- paste0('https://sync-', nn, '.',
