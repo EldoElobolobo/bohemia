@@ -18,12 +18,12 @@ creds <- list(
 
 # Define other parameters
 refresh <- TRUE # do you want to fetch new data (TRUE) or just use previously fetched data (FALSE)
-lc <- 'MKM' # 3 letter location code
+lc <- 'KAI' # 3 letter location code
 n_teams <- 3 # Number of enumeration teams
 enum <- TRUE # whether to generate a list for enumerators (true) or not (false). For TZA, always TRUE
 use_previous <- FALSE # whether to use previous data on households collected through enumeration (true) or guess households based on recon (false). For tza, always false
 date_range <- as.Date(c('2020-01-01',
-                        '2020-12-31')) # the min and max dates to filter for consent verification list
+                        '2021-12-31')) # the min and max dates to filter for consent verification list
 
 ############# MINICENSUS
 # Read in the "minicensus" data

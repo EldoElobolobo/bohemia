@@ -1,51 +1,97 @@
-server_root <- 'databrew.fr'
+server_root <- 'databrew.pro'
 country <- 'Mozambique'
 suitcase_dir <- '/home/joebrew/Documents/suitcase'
 jar_file <- 'ODK-X_Suitcase_v2.1.8.jar'
 odkx_path <- '/home/joebrew/Documents/bohemia/odkx/app/config' # must be full path!
 kf <- '../../credentials/bohemia_priv.pem' #path to private key for name decryption
 creds <- yaml::yaml.load_file('../../credentials/credentials.yaml')
-use_real_names <- FALSE # whether to decrypt names (TRUE) or use fakes ones (false)
+use_real_names <- TRUE # whether to decrypt names (TRUE) or use fakes ones (false)
 is_linux <- Sys.info()['sysname'] == 'Linux'
 library(dplyr)
 
 # Read in the teams-geographies mapping
 library(readr)
 mapping <- read_csv('migration_groups_hamletlevel.csv') # emailed from eldo
-# Assign 1 of 3 teams to each hamlet
+# Assign 1 of 5 teams to each hamlet
 gps <- bohemia::gps
 gpx <- left_join(mapping,
                  gps %>%
                    dplyr::select(code, lng, lat)) %>%
   filter(!is.na(lng))
-gpx$team_number <- as.numeric(factor(gpx$team_name))
-
+# gpx$team_number <- as.numeric(factor(gpx$team_name))
+# 
 # library(ggplot2)
 # ggplot(data = gpx,
 #        aes(x = lng,
 #            y = lat)) +
 #   geom_point(aes(color = factor(team_number)))
-
-# Based on the above plot, let's make explicit teams
-team_df <- 
-  tibble(team_number = 1:8,
-         team_agg = c(2, 2, 1, 3,
-                      1, 1, 2, 3))
-gpx <- left_join(gpx, team_df)
-
-# # Write csvs
-# right <- gpx %>%
-#   dplyr::distinct(team_name, .keep_all = TRUE) %>%
-#   dplyr::select(team_name, team_number)
-# team_write <- team_df %>%
-#   left_join(right) %>%
-#   dplyr::select(team_agg, team_name)
-# write_csv(team_df, '~/Desktop/eldo_team.csv')
 # 
+# load(paste0(country, '_mincensus_data.RData'))
+# pd <- minicensus_data$minicensus_main %>%
+#   mutate(code = hh_hamlet_code) %>%
+#   left_join(mapping %>% dplyr::select(code, team_name)) %>%
+#   # mutate(team_name = ifelse(is.na(team_name), 'Other', team_name)) %>%
+#   filter(!is.na(team_name))
+# x <- pd %>%
+#   group_by(team_name) %>%
+#   tally %>%
+#   arrange(desc(n))
+# x
+# Based on the above, make teams
+team_data <- tibble(team_name = c('Milista Mustafa | Manuel Monongoleira', 
+                                  'Zacarias Pontavida | Jone Mbalame', 
+                                  'Hermenegildo Antonio',
+                                  'Ananias Luanda', 
+                                  'Tania Novo', 
+                                  'Inocenio Mario Vegove', 
+                                  'Edson Dorico', 
+                                  'Paulo Xavier'),
+                    team_agg = c(1,
+                                 2,
+                                 3,
+                                 4,
+                                 5,
+                                 5,
+                                 5,
+                                 4))
+gpx <- left_join(gpx, team_data)
+# pd <- left_join(pd, team_data)
+# x <- pd %>%
+#   group_by(team_agg) %>%
+#   tally %>%
+#   arrange(desc(n))
+# x
+# # Define function for extracting geolocation
+# extract_ll <- function(x){
+#   splat <- strsplit(x, ' ')
+#   lat <- as.numeric(unlist(lapply(splat, function(z){z[1]})))
+#   lng <- as.numeric(unlist(lapply(splat, function(z){z[2]})))
+#   tibble(lng, lat)
+# }
+# locs <- extract_ll(pd$hh_geo_location)
+# pd <- bind_cols(pd, locs)
+# ggplot(data = pd %>% sample_n(1000),
+#        aes(x = lng,
+#            y = lat,
+#            color = factor(team_agg),
+#            pch = factor(team_agg))) +
+#   geom_point()
 # 
+# # Based on the above plot, let's make explicit teams
+# team_df <-
+#   tibble(team_number = 1:8,
+#          team_agg = c(2, 2, 1, 3,
+#                       1, 1, 2, 3))
+# gpx <- left_join(gpx, team_df)
+
+# Write csvs
+write_csv(gpx, '~/Desktop/eldo_team.csv')
+
+
 # ggplot(data = gpx %>%
 #          mutate(team_name = paste0(team_name, ': sync-',
-#                                    team_agg, '.databrew.fr')),
+#                                    team_agg, '.',
+#                                    server_root)),
 #        aes(x = lng,
 #            y = lat)) +
 #   geom_point(aes(color = factor(team_name)),
@@ -56,7 +102,7 @@ gpx <- left_join(gpx, team_df)
 #   theme(legend.position = 'right') +
 #   scale_color_manual(name = 'Team',
 #                      values = rainbow(8))
-# 
+
 # library(leaflet)
 # leaflet() %>%
 #   addProviderTiles(providers$Esri.WorldImagery) %>%
@@ -515,16 +561,14 @@ if(file_name %in% dir()){
        file = file_name)
 }
 
-
+nn_list <- list()
 # Loop through each instance / area
-team_aggs <- c(2, 1, 3) # unique(team_df$team_agg)
-n_teams <- length(team_aggs)
-n_teams <- 3 
+team_aggs <- 2:5# sort(unique(team_data$team_agg))
 for(nn in team_aggs){
   out_list <- minicensus_data
   the_server <- paste0('https://sync-', nn, '.',
                        server_root)
-  this_team_agg <- team_aggs[nn]
+  this_team_agg <- nn# team_aggs[nn]
   only_hamlets <- gpx %>%
     filter(team_agg == this_team_agg) %>%
     .$code
@@ -550,6 +594,8 @@ for(nn in team_aggs){
     out_list$minicensus_repeat_water <- out_list$minicensus_repeat_water %>%
       filter(instance_id %in% iids)
   }
+  message(nrow(out_list$minicensus_main), ' HOUSEHOLDS --------------')
+  write_csv(out_list$minicensus_main, paste0('~/Desktop/households_endpoint_',nn, '.csv' ))
   
   # Decrypt names
   if(use_real_names){
@@ -639,7 +685,7 @@ for(nn in team_aggs){
                      update_path = this_path,
                      is_linux = is_linux)
   }
-  
+  Sys.sleep(60)
 }
 
 
