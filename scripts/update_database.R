@@ -571,27 +571,43 @@ anomalies <- bind_rows(
 )
 anomalies$date[nchar(anomalies$date) != 10] <- NA
 anomalies$date <- as.Date(anomalies$date)
+
 # Drop old anomalies and add these ones to the database
 # however, we don't want to drop any old anomalies that have a correction already
 # associated (since we want to give the site "credit" for that)
-
-# already_anomalies <- dbGetQuery(conn = con, "SELECT * FROM anomalies;")
-# already_anomalies <- left_join(already_anomalies, anomalies %>% dplyr::select(id, hamlet_code))
-
-
 corrections <- dbGetQuery(conn = con, "SELECT * FROM corrections;")
-keep_these <- paste0('(', paste0("'", corrections$id, "'", collapse = ', '), ')', collapse = '')
-dbExecute(conn = con,
-          statement = paste0('DELETE FROM anomalies WHERE id NOT IN ', keep_these, ';'))
 
-already_in <- dbGetQuery(conn = con, 'select id from anomalies;')
+new_anomalies <- anomalies %>% mutate(keep = TRUE)
+already_anomalies <- dbGetQuery(conn = con, "SELECT * FROM anomalies;") %>%
+  mutate(keep = id %in% corrections$id)
 
-anomalies <- anomalies %>% filter(!duplicated(id),
-                                  !id %in% already_in$id) # need to check on this!
+anomalies <- bind_rows(
+  already_anomalies,
+  new_anomalies
+) %>%
+  dplyr::distinct(id, .keep_all = TRUE) %>%
+  filter(keep) %>%
+  dplyr::select(-keep)
+
+# anomalies <- bind_rows(
+#   already_anomalies,
+#   new_anomalies
+# ) %>%
+#   dplyr::distinct(id, .keep_all = TRUE)
+# keep_these <- paste0('(', paste0("'", corrections$id, "'", collapse = ', '), ')', collapse = '')
+# dbExecute(conn = con,
+#           statement = paste0('DELETE FROM anomalies WHERE id NOT IN ', keep_these, ';'))
+# 
+# already_in <- dbGetQuery(conn = con, 'select id from anomalies;')
+# 
+# anomalies <- anomalies %>% filter(!duplicated(id),
+#                                   !id %in% already_in$id) # need to check on this!
+
+
 dbWriteTable(conn = con,
              name = 'anomalies',
              value = anomalies,
-             append = TRUE)
+             overwrite = TRUE)
 
 # See how many corrections are pending fixes
 

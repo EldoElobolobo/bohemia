@@ -32,6 +32,20 @@ shutil.move('entoa3.xml',  '../forms/entoa3/entoa3.xml')
 
 print('Done. Docs in forms/entoa3.')
 
+# ## ENTO B3
+# s = ezsheets.Spreadsheet('https://docs.google.com/spreadsheets/d/1eCJJMl6hcR4tDcesTSBXEG3Lo60DOJkw/edit#gid=1107902451')
+# s.downloadAsExcel()
+#
+# ## Convert to xml
+# os.system('xls2xform entob3.xlsx entob3.xml ')
+#
+# # Move
+# if not os.path.isdir('../forms/entob3/'):
+#     os.mkdir('../forms/entob3')
+# shutil.move('entob3.xlsx', '../forms/entob3/entob3.xlsx')
+# shutil.move('entob3.xml',  '../forms/entob3/entob3.xml')
+#
+# print('Done. Docs in forms/entob3.')
 
 
 ## ENTOSCREENING
