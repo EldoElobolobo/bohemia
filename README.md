@@ -7,7 +7,7 @@ This repository contains utilities and guides created by DataBrew for use by the
 Guides
 ------------
 
-Several "how-to" guides are available for use by different Bohemia team members:
+Several "how-to" guides are available for use by different Bohemia team members:  
 
 ### [1. Set up the server](guides/guide_odk_setup.md)
 
