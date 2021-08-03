@@ -1,6 +1,5 @@
 # https://docs.google.com/document/d/1kAXh00E4blsHRWw5VyhxeKtbq1kEzCxqChO12qoPNZ0/edit#heading=h.5cd1aedbdpsg
 
-set.seed(123)
 library(sp)
 library(bohemia)
 library(tidyverse)
@@ -9,7 +8,23 @@ library(databrew)
 library(leaflet)
 library(kableExtra)
 library(ggplot2)
+library(readr)
 theme_set(theme_simple())
+
+# Create the 3 level treatment assignments
+
+if(!'treatment_assignments.csv' %in% dir()){
+  set.seed(as.numeric(Sys.time())) # intentionally unreproducible
+  grps <- c('Control', 'Human', 'Human+Animal')
+  treatment_assignments <- 
+    tibble(assignment = 1:3,
+           intervention = sample(grps))
+  write_csv(treatment_assignments, 'treatment_assignments.csv')
+} else {
+  treatment_assignments <- read_csv('treatment_assignments.csv')
+}
+
+set.seed(123)
 
 # Read in objects created in monte_carlo.R
 # (simulation number 9 is the final one)

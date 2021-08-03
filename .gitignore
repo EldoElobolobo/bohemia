@@ -23,3 +23,5 @@ tmp
 .Rhistory
 records.sqlite3
 *.sqlite3
+analyses/cluster_minicensus/moz/final_clusters/assignments.zip
+
