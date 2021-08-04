@@ -152,6 +152,7 @@ if('sentinel_cdc_light_trap.csv' %in% dir()){
 if('random_cdc_light_trap_households.csv' %in% dir()){
   random_cdc_light_trap_households <- read_csv('random_cdc_light_trap_households.csv')
   random_cdc_light_trap_clusters <- read_csv('random_cdc_light_trap_clusters.csv')
+  random_cdc_light_trap_households_only_4 <- read_csv('random_cdc_light_trap_households_only_4.csv')
 } else {
   set.seed(123)
   
@@ -244,6 +245,88 @@ if(make_map){
   save_html(html = l, file = '~/Desktop/sentinelclustersmoz.html')
 }
 
+
+# CDC Light Trap Livestock Enclosures
+# From the 15 sentinel clusters, randomly sample 2 clusters for each arm (ie, 6 total clusters).
+# From each randomly sampled cluster, sample 2 livestock enclosures (ie, 12 total livestock enclosures).
+if('cdc_light_trap_livestock_enclosures_clusters.csv' %in% dir()){
+  message('reading')
+  cdc_light_trap_livestock_enclosures_clusters <- read_csv('cdc_light_trap_livestock_enclosures_clusters.csv')
+} else {
+  set.seed(123)
+  message('writing')
+  # Get the 15 sentinel clusters and randomly sample 2 per arm
+  cdc_light_trap_livestock_enclosures_clusters <- ento_sentinel_clusters %>%
+    dplyr::sample_n(nrow(ento_sentinel_clusters)) %>%
+    mutate(dummy = 1) %>%
+    group_by(arm) %>%
+    mutate(cs = cumsum(dummy)) %>%
+    ungroup %>%
+    filter(cs %in% 1:2) %>%
+    arrange(arm) %>%
+    dplyr::select(-dummy, -cs) %>%
+    mutate(type = 'CDC light trap livestock enclosure cluster')
+  write_csv(cdc_light_trap_livestock_enclosures_clusters, 'cdc_light_trap_livestock_enclosures_clusters.csv')
+  
+  # Having established the 6 clusters, get all the livestock-holding households in those clusters
+  # Deliverable 1: A “guideline dataset” which is a table of all households from the minicensus which indicated (in the minicensus) a nearby livestock enclosure, and are in the 6 clusters, with columns showing household ID, cluster.  This table should be randomly ordered, since its ordering will serve to ensure that enrollment is random. 
+  if('cdc_light_trap_livestock_enclosures_clusters_all_hh.csv' %in% dir()){
+    cdc_light_trap_livestock_enclosures_clusters_all_hh <- 
+      read_csv('cdc_light_trap_livestock_enclosures_clusters_all_hh.csv')
+    message('reading')
+  } else {
+    cdc_light_trap_livestock_enclosures_clusters_all_hh <- 
+      pd_moz$minicensus_main %>%
+      mutate(hamlet_code = substr(hh_id, 1, 3)) %>%
+      dplyr::select(instance_id,
+                    hamlet_code,
+                    wid,
+                    hh_id,
+                    hh_geo_location,
+                    # Cattle
+                    hh_animals_distance_cattle_dry_season,
+                    hh_animals_distance_cattle_rainy_season,
+                    hh_animals_where_cattle_dry_season,
+                    hh_animals_where_cattle_rainy_season,
+                    # Pigs
+                    hh_animals_dry_season_distance_pigs, 
+                    hh_animals_rainy_season_distance_pigs,
+                    hh_animals_rainy_season_pigs,
+                    hh_animals_dry_season_pigs) %>%
+      left_join(hh_level %>%
+                  dplyr::select(instance_id, cluster)) %>%
+      filter(!is.na(cluster)) %>%
+      filter(cluster %in% cdc_light_trap_livestock_enclosures_clusters$cluster)
+    locs <- extract_ll(cdc_light_trap_livestock_enclosures_clusters_all_hh$hh_geo_location)
+    cdc_light_trap_livestock_enclosures_clusters_all_hh <- bind_cols(cdc_light_trap_livestock_enclosures_clusters_all_hh, locs)
+    cdc_light_trap_livestock_enclosures_clusters_all_hh <- cdc_light_trap_livestock_enclosures_clusters_all_hh %>%
+      filter(!is.na(hh_animals_rainy_season_pigs) |
+               !is.na(hh_animals_dry_season_pigs) |
+               !is.na(hh_animals_where_cattle_dry_season) |
+               !is.na(hh_animals_where_cattle_rainy_season)) %>%
+      mutate(description = 
+               paste0(
+                 ifelse(!is.na(hh_animals_dry_season_pigs),
+                        paste0('Pigs in dry season: ', hh_animals_dry_season_pigs, '. '),
+                        ''),
+                 ifelse(!is.na(hh_animals_rainy_season_pigs),
+                        paste0('Pigs in rainy season: ', hh_animals_dry_season_pigs, '. '),
+                        ''),
+                 ifelse(!is.na(hh_animals_where_cattle_rainy_season),
+                        paste0('Cattle in rainy season: ', hh_animals_where_cattle_rainy_season, '. '),
+                        ''),
+                 ifelse(!is.na(hh_animals_where_cattle_dry_season),
+                        paste0('Cattle in dry season: ', hh_animals_where_cattle_dry_season, '. '),
+                        '')
+               ))
+    
+    write_csv(cdc_light_trap_livestock_enclosures_clusters_all_hh, 'cdc_light_trap_livestock_enclosures_clusters_all_hh.csv')
+    message('writing')
+  }
+}
+  
+  
+  
 # Make geographic files for use in maps.me
 if(!dir.exists('geographic_files')){
   dir.create('geographic_files')
@@ -270,46 +353,47 @@ water$description <- water$water_bodies_type
 
 # LIVESTOCK ENCLSORUES
 # 1 point for every household reporting a livestock enclosure, as per minicensus. questions 19a and 19b in minicensus
-livestock <- pd_moz$minicensus_main %>%
-  mutate(hamlet_code = substr(hh_id, 1, 3)) %>%
-  dplyr::select(instance_id,
-                hamlet_code,
-                wid,
-                hh_id,
-                hh_geo_location,
-                # Cattle
-                hh_animals_distance_cattle_dry_season,
-                hh_animals_distance_cattle_rainy_season,
-                hh_animals_where_cattle_dry_season,
-                hh_animals_where_cattle_rainy_season,
-                # Pigs
-                hh_animals_dry_season_distance_pigs, 
-                hh_animals_rainy_season_distance_pigs,
-                hh_animals_rainy_season_pigs,
-                hh_animals_dry_season_pigs)
-locs <- extract_ll(livestock$hh_geo_location)
-livestock <- bind_cols(livestock, locs)
-livestock <- livestock %>%
-  filter(!is.na(hh_animals_rainy_season_pigs) |
-           !is.na(hh_animals_dry_season_pigs) |
-           !is.na(hh_animals_where_cattle_dry_season) |
-           !is.na(hh_animals_where_cattle_rainy_season)) %>%
-  mutate(description = 
-           paste0(
-             ifelse(!is.na(hh_animals_dry_season_pigs),
-                    paste0('Pigs in dry season: ', hh_animals_dry_season_pigs, '. '),
-                    ''),
-             ifelse(!is.na(hh_animals_rainy_season_pigs),
-                           paste0('Pigs in rainy season: ', hh_animals_dry_season_pigs, '. '),
-                           ''),
-             ifelse(!is.na(hh_animals_where_cattle_rainy_season),
-                    paste0('Cattle in rainy season: ', hh_animals_where_cattle_rainy_season, '. '),
-                    ''),
-             ifelse(!is.na(hh_animals_where_cattle_dry_season),
-                    paste0('Cattle in dry season: ', hh_animals_where_cattle_dry_season, '. '),
-                    '')
-           ))
+# livestock <- pd_moz$minicensus_main %>%
+#   mutate(hamlet_code = substr(hh_id, 1, 3)) %>%
+#   dplyr::select(instance_id,
+#                 hamlet_code,
+#                 wid,
+#                 hh_id,
+#                 hh_geo_location,
+#                 # Cattle
+#                 hh_animals_distance_cattle_dry_season,
+#                 hh_animals_distance_cattle_rainy_season,
+#                 hh_animals_where_cattle_dry_season,
+#                 hh_animals_where_cattle_rainy_season,
+#                 # Pigs
+#                 hh_animals_dry_season_distance_pigs, 
+#                 hh_animals_rainy_season_distance_pigs,
+#                 hh_animals_rainy_season_pigs,
+#                 hh_animals_dry_season_pigs)
+# locs <- extract_ll(livestock$hh_geo_location)
+# livestock <- bind_cols(livestock, locs)
+# livestock <- livestock %>%
+#   filter(!is.na(hh_animals_rainy_season_pigs) |
+#            !is.na(hh_animals_dry_season_pigs) |
+#            !is.na(hh_animals_where_cattle_dry_season) |
+#            !is.na(hh_animals_where_cattle_rainy_season)) %>%
+#   mutate(description = 
+#            paste0(
+#              ifelse(!is.na(hh_animals_dry_season_pigs),
+#                     paste0('Pigs in dry season: ', hh_animals_dry_season_pigs, '. '),
+#                     ''),
+#              ifelse(!is.na(hh_animals_rainy_season_pigs),
+#                            paste0('Pigs in rainy season: ', hh_animals_dry_season_pigs, '. '),
+#                            ''),
+#              ifelse(!is.na(hh_animals_where_cattle_rainy_season),
+#                     paste0('Cattle in rainy season: ', hh_animals_where_cattle_rainy_season, '. '),
+#                     ''),
+#              ifelse(!is.na(hh_animals_where_cattle_dry_season),
+#                     paste0('Cattle in dry season: ', hh_animals_where_cattle_dry_season, '. '),
+#                     '')
+#            ))
 
+livestock <- cdc_light_trap_livestock_enclosures_clusters_all_hh
 # Combine the livestock and water
 livestock <- livestock %>%
   dplyr::select(hh_id,
