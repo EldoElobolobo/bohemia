@@ -132,12 +132,14 @@ app_ui <- function(request) {
                                               'Social cultural issue' =   'social_cultural_issue',
                                               'Safety issue' =   'safety_issue',
                                               'Community resistance' =  'community_resistance',
-                                               'Crime' = 'crime'),
+                                               'Crime' = 'crime',
+                                              'Other' = 'Other'),
                                    selected = c('Accessibility issue' = 'accessibility_issue',
                                                 'Social cultural issue' =   'social_cultural_issue',
                                                 'Safety issue' =   'safety_issue',
                                                 'Community resistance' =  'community_resistance',
-                                                'Crime' = 'crime'),
+                                                'Crime' = 'crime',
+                                                'Other' = 'Other'),
                                    multiple = TRUE)
                 
                 )
