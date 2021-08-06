@@ -50,7 +50,17 @@ for(i in 1:nrow(households_data)){
   people_list[[i]] <- persons
 }
 people_data <- bind_rows(people_list)
+people_data$sex <- ifelse(people_data$sex, 'Male', 'Female')
 
+# Add a field to households data which is minicensus roster
+minicensus_roster <- people_data %>%
+  mutate(full_name = paste0(first_name, ' ', last_name)) %>%
+  group_by(household_id) %>%
+  summarise(minicensus_roster = paste0(full_name, collapse = '; '))
+
+# Join the roster to the households data
+households_data <- left_join(households_data,
+                             minicensus_roster)
 
 # Write csvs and save
 if(!dir.exists('odk_collect_migrations_files')){
