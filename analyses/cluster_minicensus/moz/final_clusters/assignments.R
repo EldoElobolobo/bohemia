@@ -95,7 +95,6 @@ if(!'ento_sentinel_clusters.csv' %in% dir()){
 if('sentinel_cdc_light_trap.csv' %in% dir()){
   sentinel_cdc_light_trap <- read_csv('sentinel_cdc_light_trap.csv')
   sentinel_cdc_light_trap_only_6 <- read_csv('sentinel_cdc_light_trap_only_6.csv')
-  
 } else {
   out_list <- list()
   set.seed(123)
@@ -136,6 +135,40 @@ if('sentinel_cdc_light_trap.csv' %in% dir()){
     sentinel_cdc_light_trap,
     arm_assignments
   )
+  
+  # Reconfigure columns as per August 6th email request
+  subs <- pd_moz$minicensus_repeat_hh_sub
+  subs <- left_join(subs, pd_moz$minicensus_main %>% dplyr::select(instance_id, hh_id))
+  subs <- left_join(subs, pd_moz$minicensus_people %>%
+                      dplyr::rename(hh_sub_id = num) %>%
+                      dplyr::select(instance_id, hh_sub_id, 
+                                    sub_first_name = first_name,
+                                    sub_last_name = last_name))
+  subs <- subs %>%
+    mutate(hh_head_substitute = paste0(sub_first_name, ' ', sub_last_name)) %>%
+    group_by(hh_id) %>%
+    summarise(hh_head_substitute = paste0(hh_head_substitute, collapse = '; '))
+  sentinel_cdc_light_trap <- sentinel_cdc_light_trap %>%
+    mutate(is_the_hh_id_correct = ' ',
+           is_the_hh_head_name_correct = ' ',
+           code = substr(hh_id, 1, 3)) %>%
+    left_join(locations %>% dplyr::select(code, Ward, Village, Hamlet)) %>%
+    left_join(subs) %>%
+    left_join(pd_moz$minicensus_main %>% dplyr::select(contact = hh_contact_info_number, hh_id))
+  
+  # Re arrange a bit as per request
+  sentinel_cdc_light_trap <- sentinel_cdc_light_trap %>%
+    mutate(No = 1:nrow(sentinel_cdc_light_trap)) %>%
+    mutate(hh_head_name = paste0(first_name, ' ', last_name)) %>%
+    dplyr::select(No, cluster, hh_id,
+                  is_the_hh_id_correct,
+                  hh_head_name,
+                  is_the_hh_head_name_correct,
+                  hh_head_substitute,
+                  Ward, Village, Hamlet, contact,
+                  sample_type, randomization_number) %>%
+    mutate(observation = ' ') 
+  
   sentinel_cdc_light_trap_only_6 <- sentinel_cdc_light_trap %>%
     filter(randomization_number <= 6)
   write_csv(sentinel_cdc_light_trap, 'sentinel_cdc_light_trap.csv')
