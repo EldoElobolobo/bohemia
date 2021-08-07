@@ -62,6 +62,11 @@ minicensus_roster <- people_data %>%
 households_data <- left_join(households_data,
                              minicensus_roster)
 
+# Modify names
+people_data <- people_data %>%
+  mutate(full_name = paste0(first_name, ' ', last_name)) %>%
+  mutate(full_name_with_id = paste0(full_name, ' (', person_id, ')'))
+
 # Write csvs and save
 if(!dir.exists('odk_collect_migrations_files')){
   dir.create('odk_collect_migrations_files')
