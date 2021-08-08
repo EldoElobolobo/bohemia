@@ -35,6 +35,12 @@ status_level <- read_csv('status_level.csv')
 load('image.RData')
 load('../data.RData')
 
+# # Join household id to hh level data
+# hh_level <- left_join(
+#   hh_level,
+#   pd_moz$minicensus_main %>% dplyr::select(instance_id, hh_id)
+# )
+# write_csv(hh_level, 'hh_level.csv')
 
 # Get the subset spatial objects
 if(!'final_spatial_data.RData' %in% dir()){
