@@ -6,8 +6,6 @@ library(babynames)
 country <- 'Mozambique'
 use_real_names <- TRUE # whether to decrypt names (TRUE) or use fakes ones (false)
 kf <- '../../credentials/bohemia_priv.pem' #path to private key for name decryption
-creds <- yaml::yaml.load_file('../../credentials/credentials.yaml')
-is_linux <- Sys.info()['sysname'] == 'Linux'
 
 # 4 tables
 # 'locations_data.csv',
@@ -90,11 +88,11 @@ full_roster <- people_data %>%
   dplyr::select(list_name, name_key, label)
 
 # Write csvs and save
-
-if(!dir.exists('odk_collect_migrations_files')){
-  dir.create('odk_collect_migrations_files')
+the_dir <- paste0('odk_collect_migrations_files_', country)
+if(!dir.exists(the_dir)){
+  dir.create(the_dir)
 }
-setwd('odk_collect_migrations_files')
+setwd(the_dir)
 write_csv(households_data, 'households_data.csv')
 write_csv(locations_data, 'locations_data.csv')
 write_csv(people_data, 'people_data.csv' )
@@ -105,7 +103,7 @@ write_csv(full_roster, 'full_roster.csv')
 # locations_data <- read_csv('locations_data.csv')
 # people_data <- read_csv('people_data.csv')
 
-zip(zipfile = '../metadata.zip',
+zip(zipfile = 'metadata.zip',
     files = c('locations_data.csv',
               'households_data.csv',
               'people_data.csv',
