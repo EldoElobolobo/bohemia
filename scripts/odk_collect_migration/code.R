@@ -19,7 +19,7 @@ locations_data$name_key <- NULL
 hh_list <- list()
 for(i in 1:nrow(locations_data)){
   this_location <- locations_data$hamlet_id[i]
-  these_ids <- paste0(this_location, '-', add_zero(1:100, n = 3))
+  these_ids <- paste0(this_location, '-', add_zero(1:5, n = 3))
   out <- tibble(hamlet_id = this_location,
                 hh_id = these_ids,
                 n_members = 5)
@@ -56,7 +56,7 @@ people_data$sex <- ifelse(people_data$sex, 'Male', 'Female')
 minicensus_roster <- people_data %>%
   mutate(full_name = paste0(first_name, ' ', last_name)) %>%
   group_by(household_id) %>%
-  summarise(minicensus_roster = paste0(full_name, collapse = '; '))
+  summarise(minicensus_roster = paste0(full_name, collapse = ';\n'))
 
 # Join the roster to the households data
 households_data <- left_join(households_data,
@@ -67,6 +67,13 @@ people_data <- people_data %>%
   mutate(full_name = paste0(first_name, ' ', last_name)) %>%
   mutate(full_name_with_id = paste0(full_name, ' (', person_id, ')'))
 
+# Get searcher of full roster
+full_roster <- people_data %>%
+  mutate(list_name = 'full_roster') %>%
+  mutate(name_key = person_id,
+         label = full_name_with_id) %>%
+  dplyr::select(list_name, name_key, label)
+
 # Write csvs and save
 if(!dir.exists('odk_collect_migrations_files')){
   dir.create('odk_collect_migrations_files')
@@ -75,10 +82,17 @@ setwd('odk_collect_migrations_files')
 write_csv(households_data, 'households_data.csv')
 write_csv(locations_data, 'locations_data.csv')
 write_csv(people_data, 'people_data.csv' )
+write_csv(full_roster, 'full_roster.csv')
+
+
+# households_data <- read_csv('households_data.csv')
+# locations_data <- read_csv('locations_data.csv')
+# people_data <- read_csv('people_data.csv')
 
 zip(zipfile = '../metadata.zip',
     files = c('locations_data.csv',
               'households_data.csv',
-              'people_data.csv'))
+              'people_data.csv',
+              'full_roster.csv'))
 setwd('..')
 
