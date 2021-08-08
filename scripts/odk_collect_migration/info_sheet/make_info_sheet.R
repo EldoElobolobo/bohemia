@@ -73,8 +73,8 @@ if(!dir.exists(the_dir)){
 for(j in 1:nrow(hhx)){
   this_hh <- hhx$household_id[j]
   rmarkdown::render(input = 'info_sheet_template.Rmd',
-                    # output_file = paste0(this_hh, '.pdf'),
-                    # output_dir = the_dir,
+                    output_file = paste0(this_hh, '.pdf'),
+                    output_dir = the_dir,
                     params = list(hh_id = this_hh))  
 }
 
