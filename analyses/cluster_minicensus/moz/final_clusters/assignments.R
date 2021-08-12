@@ -186,8 +186,43 @@ if('sentinel_cdc_light_trap.csv' %in% dir()){
     dplyr::select(-is_the_hh_id_correct,
                   -is_the_hh_head_name_correct)
   write_csv(sentinel_cdc_light_trap_deliverable_2, 'sentinel_cdc_light_trap_deliverable_2.csv')
+}
 
-  
+# Resting household indoor
+# From each of the 15 sentinel clusters, sample 4 households (ie, 60 total households), plus 2 backup households clearly indicated as such (ie, 90 total households).
+# Ensure no overlap with those c sampled from the "Sentinel CDC light trap" selection (above)
+if('resting_household_indoor.csv' %in% dir()){
+  resting_household_indoor <- read_csv('resting_household_indoor.csv')
+} else {
+  # Sample 4 households (plus 2 backups) for each of the 15 sentinenl clusters, with no overlap with the sentinel cdc light trap
+  # households. In order to avoid overlap, we can just exploit the randomness in the previous sample, but do inverse
+  resting_household_indoor <- sentinel_cdc_light_trap %>%
+    dplyr::select(-No) %>%
+    group_by(cluster) %>%
+    mutate(max_n = max(randomization_number)) %>%
+    ungroup %>%
+    mutate(new_randomization_number = 1 + (max_n - randomization_number))
+  resting_household_indoor <- resting_household_indoor %>%
+    mutate(No = 1:nrow(resting_household_indoor)) %>%
+    mutate(sample_type = 'Resting household indoor') %>%
+    dplyr::select(No, cluster, hh_id,
+                  is_the_hh_id_correct,
+                  hh_head_name,
+                  is_the_hh_head_name_correct,
+                  hh_head_substitute,
+                  Ward, Village, Hamlet,
+                  contact,
+                  sample_type,
+                  randomization_number,
+                  observation)
+  write_csv(resting_household_indoor, 'resting_household_indoor.csv')
+  resting_household_indoor_only_6 <- resting_household_indoor %>%
+    filter(randomization_number <= 6)
+  write_csv(resting_household_indoor_only_6, 'resting_household_indoor_only_6.csv')
+  resting_household_indoor_deliverable_2 <- 
+    resting_household_indoor %>% dplyr::select(-is_the_hh_id_correct,
+                                               -is_the_hh_head_name_correct)
+  write_csv(resting_household_indoor_deliverable_2, 'resting_household_indoor_deliverable_2.csv')
 }
 
 
