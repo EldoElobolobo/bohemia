@@ -25,3 +25,15 @@
   background-color: #a94442;
   text-decoration: none;
 }
+
+table td.withPlaceholder:empty:before {
+  content: 'integer';
+  color: gray;
+  font-style: italic;
+}
+
+table td.withPlaceholder2:empty:before {
+  content: 'qrcode';
+  color: gray;
+  font-style: italic;
+}

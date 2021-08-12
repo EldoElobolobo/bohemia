@@ -1,9 +1,9 @@
 
 
 
-
 getEntoData <- function(){
   require(readr)
+  require(magrittr)
   briefcase_dir <- "."
   jar_file_briefcase <- 'ODK-Briefcase-v1.18.0'
   
@@ -74,6 +74,9 @@ getEntoData <- function(){
       
       a4 <- cbind(a4_df, new_df)%>%
         dplyr::select(todays_date,Cluster,site,Species)
+    }else{
+      a4 <- a4 %>%dplyr::select(todays_date,Cluster,site)
+      a4<- data.frame(a4, "Species" = character())
     }
     
     a4$n_dissected = NULL
