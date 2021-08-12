@@ -172,6 +172,22 @@ gps <- left_join(
 
 ```
 
+```{r, eval = FALSE}
+# Read data sent from Imani for ad-hoc comparison 
+left <- tza$minicensus_main %>% dplyr::select(hh_id, instance_id_psql = instance_id) %>% mutate(in_databrew = TRUE)
+right <- readxl::read_excel('data/Minicensus_clean_LocalDB.xlsx') %>% dplyr::select(hh_id, instance_id_imani = instanceid) %>%
+  mutate(in_ihi = TRUE)
+ad_hoc <- full_join(left, right) %>%
+  mutate(in_databrew = ifelse(is.na(in_databrew), FALSE, in_databrew),
+         in_ihi = ifelse(is.na(in_ihi), FALSE, in_ihi)) %>%
+  mutate(discrepancy = 
+           (in_ihi & !in_databrew) |
+           (!in_ihi & in_databrew)
+           ) %>%
+  arrange(desc(discrepancy))
+write_csv(ad_hoc, '~/Desktop/comparison.csv')
+```
+
 ```{r}
 # Combine data
 odk_data <- list()
