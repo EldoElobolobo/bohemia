@@ -501,6 +501,113 @@ if('cdc_light_trap_livestock_enclosures_clusters_deliverable_3.csv' %in% dir()){
   write_csv(cdc_light_trap_livestock_enclosures_clusters_deliverable_3, 'cdc_light_trap_livestock_enclosures_clusters_deliverable_3.csv')  
 }
 
+# Human baited double net
+# From the 15 sentinel clusters, randomly sample 2 clusters for each arm (ie, 6 total clusters). Saved as “human_baited_double_net_clusters.csv”
+if('human_baited_double_net_clusters.csv' %in% dir()){
+  human_baited_double_net_clusters <- read_csv('human_baited_double_net_clusters.csv')
+  message('reading')
+} else {
+  set.seed(123)
+  human_baited_double_net_clusters <- ento_sentinel_clusters %>%
+    dplyr::sample_n(nrow(ento_sentinel_clusters)) %>%
+    mutate(dummy = 1) %>%
+    group_by(arm) %>%
+    mutate(cs = cumsum(dummy)) %>%
+    ungroup %>%
+    filter(cs <= 2) %>%
+    arrange(arm, cluster) %>%
+    dplyr::select(-dummy, -cs)
+  write_csv(human_baited_double_net_clusters, 'human_baited_double_net_clusters.csv')
+  message('writing')
+}
+# Human baited double net - Deliverable: A table in which each row is one household (include all households in the cluster), with columns indicating No, cluster, hh_id, is_the_hh_id_correct, hh_head_name, is_the_hh_head_name_correct, hh_head_substitute, Ward, Village, Hamlet, contact, sample_type, randomization_number, observation .
+if('human_baited_double_net_deliverable_1.csv' %in% dir()){
+  human_baited_double_net_deliverable_1 <- read_csv('human_baited_double_net_deliverable_1.csv')
+  message('reading')
+} else {
+  out_list <- list()
+  set.seed(123)
+  for(i in 1:nrow(human_baited_double_net_clusters)){
+    this_cluster <- human_baited_double_net_clusters[i,]
+    this_cluster_number <- this_cluster$cluster
+    these_hh <- master_poly[master_poly@data$cluster == this_cluster_number,]
+    # randomize order
+    sample_index <- sample(1:nrow(these_hh), nrow(these_hh)) 
+    sample_hh <- these_hh[sample_index,]
+    sample_hh$sample_number <- 1:nrow(these_hh)
+    sample_hh$sample_type <- 'Human baited double net household'
+    sample_hh <- sample_hh@data
+    sample_hh <- sample_hh %>%
+      dplyr::select(cluster, randomization_number = sample_number,
+                    sample_type, lng, lat, n_members, n_adults, instance_id)
+    out_list[[i]] <- sample_hh
+  }
+  sample_hh <- bind_rows(out_list)
+  # Join with census data
+  census <- pd_moz$minicensus_main
+  people <- pd_moz$minicensus_people
+  sample_hh <- left_join(sample_hh,
+                         census %>% dplyr::select(instance_id, hh_head_id, hh_id))
+  sample_hh <- left_join(sample_hh,
+                         people %>% 
+                           mutate(num = as.character(num)) %>%
+                           dplyr::select(instance_id,
+                                         hh_head_id = num,
+                                         first_name,
+                                         last_name))
+  sample_hh <- sample_hh %>% dplyr::select(-hh_head_id,
+                                           -instance_id)
+  human_baited_double_net_deliverable_1 <- sample_hh
+  human_baited_double_net_deliverable_1 <- left_join(
+    human_baited_double_net_deliverable_1,
+    arm_assignments
+  )
+  
+  # Reconfigure columns as per August 6th email request
+  subs <- pd_moz$minicensus_repeat_hh_sub
+  subs <- left_join(subs, pd_moz$minicensus_main %>% dplyr::select(instance_id, hh_id))
+  subs <- left_join(subs, pd_moz$minicensus_people %>%
+                      dplyr::rename(hh_sub_id = num) %>%
+                      dplyr::select(instance_id, hh_sub_id, 
+                                    sub_first_name = first_name,
+                                    sub_last_name = last_name))
+  subs <- subs %>%
+    mutate(hh_head_substitute = paste0(sub_first_name, ' ', sub_last_name)) %>%
+    group_by(hh_id) %>%
+    summarise(hh_head_substitute = paste0(hh_head_substitute, collapse = '; '))
+  human_baited_double_net_deliverable_1 <- human_baited_double_net_deliverable_1 %>%
+    mutate(is_the_hh_id_correct = ' ',
+           is_the_hh_head_name_correct = ' ',
+           code = substr(hh_id, 1, 3)) %>%
+    left_join(locations %>% dplyr::select(code, Ward, Village, Hamlet)) %>%
+    left_join(subs) %>%
+    left_join(pd_moz$minicensus_main %>% dplyr::select(contact = hh_contact_info_number, hh_id))
+  
+  # Re arrange a bit as per request
+  human_baited_double_net_deliverable_1 <- human_baited_double_net_deliverable_1 %>%
+    mutate(No = 1:nrow(human_baited_double_net_deliverable_1)) %>%
+    mutate(hh_head_name = paste0(first_name, ' ', last_name)) %>%
+    dplyr::select(No, cluster, hh_id,
+                  is_the_hh_id_correct,
+                  hh_head_name,
+                  is_the_hh_head_name_correct,
+                  hh_head_substitute,
+                  Ward, Village, Hamlet, contact,
+                  sample_type, randomization_number) %>%
+    mutate(observation = ' ') 
+  write_csv(human_baited_double_net_deliverable_1, 'human_baited_double_net_deliverable_1.csv')
+  message('writing')
+}
+
+# Human baited double net - Deliverable 2: An operational list populated with columns ie a copy of the above table but without is_the_hh_id_correct, is_the_hh_head_name_correct.
+if('human_baited_double_net_deliverable_2.csv' %in% dir()){
+  human_baited_double_net_deliverable_2 <- read_csv('human_baited_double_net_deliverable_2.csv')
+} else {
+  human_baited_double_net_deliverable_2 <- human_baited_double_net_deliverable_1 %>%
+    dplyr::select(-is_the_hh_id_correct,
+                  -is_the_hh_head_name_correct)
+  write_csv(human_baited_double_net_deliverable_2, 'human_baited_double_net_deliverable_2.csv')
+}
 
 # Make geographic files for use in maps.me
 if(!dir.exists('geographic_files')){
