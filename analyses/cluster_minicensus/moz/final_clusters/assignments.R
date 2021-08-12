@@ -179,6 +179,15 @@ if('sentinel_cdc_light_trap.csv' %in% dir()){
     filter(randomization_number <= 6)
   write_csv(sentinel_cdc_light_trap, 'sentinel_cdc_light_trap.csv')
   write_csv(sentinel_cdc_light_trap_only_6, 'sentinel_cdc_light_trap_only_6.csv')
+  
+  # Make deliverable Sentinel CDC light trap, deliverable 2
+  # Deliverable 2: An operational list, ie a copy of the above table but without is_the_hh_id_correct, is_the_hh_head_name_correct. This table may need to be re-generated periodically as households can be dropped out and replaced by backups.
+  sentinel_cdc_light_trap_deliverable_2 <- sentinel_cdc_light_trap %>%
+    dplyr::select(-is_the_hh_id_correct,
+                  -is_the_hh_head_name_correct)
+  write_csv(sentinel_cdc_light_trap_deliverable_2, 'sentinel_cdc_light_trap_deliverable_2.csv')
+
+  
 }
 
 
@@ -364,7 +373,9 @@ if('cdc_light_trap_livestock_enclosures_clusters.csv' %in% dir()){
   }
 }
   
-  
+#  
+
+
   
 # Make geographic files for use in maps.me
 if(!dir.exists('geographic_files')){
@@ -469,6 +480,10 @@ households <-
                     randomization_number) %>%
       mutate(type = 'Household: Random CDC light trap') 
   )
+
+
+
+
 # Write locations files
 write_kml <- function(df, file_path,
                       layer){
