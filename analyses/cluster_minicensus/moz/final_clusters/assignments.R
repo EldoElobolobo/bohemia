@@ -335,7 +335,14 @@ if('random_cdc_light_trap_households.csv' %in% dir()){
     filter(randomization_number <= 4)
   write_csv(random_cdc_light_trap_households, 'random_cdc_light_trap_households.csv')
   write_csv(random_cdc_light_trap_households_only_4, 'random_cdc_light_trap_households_only_4.csv')
+  # random_cdc_light_trap_households_deliverable_2 <- random_cdc_light_trap_households %>%
+  #   dplyr::select(-is_the_hh_id_correct,
+  #                 -is_the_hh_head_name_correct)
+  # write_csv(random_cdc_light_trap_households_deliverable_2, 'random_cdc_light_trap_households_deliverable_2.csv')
 }
+
+
+
 
 make_map <- FALSE
 if(make_map){
@@ -622,16 +629,32 @@ extract_ll <- function(x){
   tibble(lng, lat)
 }
 
-# BODIES OF WATER
+# LARVAL HABITATS BODIES OF WATER
 # 1 point for every household reporting any body of water, as per minicensus. 21 and 21a
-water <- pd_moz$minicensus_repeat_water %>%
-  left_join(pd_moz$minicensus_main %>% 
-              dplyr::select(instance_id, water_bodies_how_many, wid, hh_id,
-                            hh_geo_location)) %>%
-  mutate(hamlet_code = substr(hh_id, 1, 3))
-locs <- extract_ll(water$hh_geo_location)
-water <- bind_cols(water, locs)
-water$description <- water$water_bodies_type
+if('larval_habitats_deliverable_1.csv' %in% dir()){
+  larval_habitats_deliverable_1 <- read_csv('larval_habitats_deliverable_1.csv')
+  message('reading')
+} else {
+  water <- pd_moz$minicensus_repeat_water %>%
+    left_join(pd_moz$minicensus_main %>% 
+                dplyr::select(instance_id, water_bodies_how_many, wid, hh_id,
+                              hh_geo_location)) %>%
+    mutate(hamlet_code = substr(hh_id, 1, 3))
+  locs <- extract_ll(water$hh_geo_location)
+  water <- bind_cols(water, locs)
+  water$description <- water$water_bodies_type
+  water <- water %>%
+    mutate(code = substr(hh_id, 1,3)) %>%
+    left_join(hh_level %>% dplyr::select(cluster, status, code))
+  larval_habitats_deliverable_1 <- water %>%
+    dplyr::select(hh_id,
+                  cluster,
+                  `kind of water` = description,
+                  status)
+  write_csv(larval_habitats_deliverable_1, 'larval_habitats_deliverable_1.csv')
+  message('writing')
+}
+
 
 # LIVESTOCK ENCLSORUES
 # 1 point for every household reporting a livestock enclosure, as per minicensus. questions 19a and 19b in minicensus
