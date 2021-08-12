@@ -192,6 +192,7 @@ if('sentinel_cdc_light_trap.csv' %in% dir()){
 # From each of the 15 sentinel clusters, sample 4 households (ie, 60 total households), plus 2 backup households clearly indicated as such (ie, 90 total households).
 # Ensure no overlap with those c sampled from the "Sentinel CDC light trap" selection (above)
 if('resting_household_indoor.csv' %in% dir()){
+  message('reading')
   resting_household_indoor <- read_csv('resting_household_indoor.csv')
 } else {
   # Sample 4 households (plus 2 backups) for each of the 15 sentinenl clusters, with no overlap with the sentinel cdc light trap
@@ -223,6 +224,42 @@ if('resting_household_indoor.csv' %in% dir()){
     resting_household_indoor %>% dplyr::select(-is_the_hh_id_correct,
                                                -is_the_hh_head_name_correct)
   write_csv(resting_household_indoor_deliverable_2, 'resting_household_indoor_deliverable_2.csv')
+  message('writing')
+}
+
+# Resting household pit shelter
+# From each of the 15 sentinel clusters, sample 1 qualified non-refusing household (ie, 15 total households).
+# Ensure no overlap with those households sampled from the "Sentinel CDC light trap" selection (far above)
+if('resting_household_pit_shelter.csv' %in% dir()){
+  message('reading')
+  resting_household_pit_shelter <- read_csv('resting_household_pit_shelter.csv')
+} else {
+  message('writing')
+  set.seed(123)
+  resting_household_pit_shelter <- sentinel_cdc_light_trap %>%
+    # no overlap
+    filter(randomization_number > 6) %>%
+    dplyr::select(-No, -randomization_number) %>%
+    mutate(sample_type = 'Resting household pit shelter')
+  resting_household_pit_shelter <- resting_household_pit_shelter %>% dplyr::sample_n(nrow(resting_household_pit_shelter))
+  resting_household_pit_shelter <- resting_household_pit_shelter %>%
+    mutate(dummy = 1) %>%
+    group_by(cluster) %>%
+    mutate(randomization_number = cumsum(dummy)) %>%
+    ungroup %>%
+    filter(randomization_number <= 3) %>%
+    mutate(sample_type = ifelse(randomization_number > 1,
+                                paste0(sample_type, ' (backup)'),
+                                sample_type)) 
+  resting_household_pit_shelter$No <- 1:nrow(resting_household_pit_shelter)
+  resting_household_pit_shelter <- resting_household_pit_shelter %>%
+    dplyr::select(No, cluster, hh_id, is_the_hh_id_correct, hh_head_name, is_the_hh_head_name_correct, hh_head_substitute, Ward, Village, Hamlet, contact, sample_type, randomization_number, observation)
+  write_csv(resting_household_pit_shelter, 'resting_household_pit_shelter.csv')
+  # Deliverable 2: Deliverable 2: An operational list,. ie a copy of the above table but without is_the_hh_id_correct, is_the_hh_head_name_correct.
+  resting_household_pit_shelter_deliverable_2 <- resting_household_pit_shelter %>%
+    dplyr::select(-is_the_hh_id_correct,
+                    -is_the_hh_head_name_correct)
+  write_csv(resting_household_pit_shelter_deliverable_2, 'resting_household_pit_shelter_deliverable_2.csv')
 }
 
 
