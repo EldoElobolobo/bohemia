@@ -5217,6 +5217,31 @@ implement(id= None, query="UPDATE clean_minicensus_main SET hh_id='KWL-585' WHER
 implement(id= None, query="UPDATE clean_minicensus_main SET hh_id='KWL-586' WHERE instance_id='4c156bf9-a387-443a-9eaf-9267c59054c2';UPDATE clean_minicensus_people SET pid = 'KWL-586-001', permid='KWL-586-001' WHERE num='1' and instance_id='4c156bf9-a387-443a-9eaf-9267c59054c2';UPDATE clean_minicensus_people SET pid = 'KWL-586-002', permid='KWL-586-002' WHERE num='2' and instance_id='4c156bf9-a387-443a-9eaf-9267c59054c2';UPDATE clean_minicensus_people SET pid = 'KWL-586-003', permid='KWL-586-003' WHERE num='3' and instance_id='4c156bf9-a387-443a-9eaf-9267c59054c2';UPDATE clean_minicensus_people SET pid = 'KWL-586-004', permid='KWL-586-004' WHERE num='4' and instance_id='4c156bf9-a387-443a-9eaf-9267c59054c2'", who='Xing Brew')
 implement(id= None, query="UPDATE clean_minicensus_main SET hh_id='KWL-189' WHERE instance_id='beeb1c38-e8f0-4e58-ad40-67e6e4336adc';UPDATE clean_minicensus_people SET pid = 'KWL-189-001', permid='KWL-189-001' WHERE num='1' and instance_id='beeb1c38-e8f0-4e58-ad40-67e6e4336adc';UPDATE clean_minicensus_people SET pid = 'KWL-189-002', permid='KWL-189-002' WHERE num='2' and instance_id='beeb1c38-e8f0-4e58-ad40-67e6e4336adc';UPDATE clean_minicensus_people SET pid = 'KWL-189-003', permid='KWL-189-003' WHERE num='3' and instance_id='beeb1c38-e8f0-4e58-ad40-67e6e4336adc';UPDATE clean_minicensus_people SET pid = 'KWL-189-004', permid='KWL-189-004' WHERE num='4' and instance_id='beeb1c38-e8f0-4e58-ad40-67e6e4336adc';UPDATE clean_minicensus_people SET pid = 'KWL-189-005', permid='KWL-189-005' WHERE num='5' and instance_id='beeb1c38-e8f0-4e58-ad40-67e6e4336adc';UPDATE clean_minicensus_people SET pid = 'KWL-189-006', permid='KWL-189-006' WHERE num='6' and instance_id='beeb1c38-e8f0-4e58-ad40-67e6e4336adc'", who='Xing Brew')
 
+# Manual deletions per Imani, 2021-08-12
+iid = "'c72cc538-be2e-402d-8186-3e5ab9e07e15'"
+implement(id = None, query = "DELETE FROM clean_minicensus_main WHERE instance_id=" + iid + "; DELETE FROM clean_minicensus_people WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_death_info WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_hh_sub WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_mosquito_net WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_water WHERE instance_id= " + iid + ";", who = 'Joe Brew')
+
+iid = "'10f54d81-dd53-4f28-8dc1-ff82a053f297'"
+implement(id = None, query = "DELETE FROM clean_minicensus_main WHERE instance_id=" + iid + "; DELETE FROM clean_minicensus_people WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_death_info WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_hh_sub WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_mosquito_net WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_water WHERE instance_id= " + iid + ";", who = 'Joe Brew')
+
+iid = "'987cdf3a-68c3-415d-87aa-ebcc7a974ffc'"
+implement(id = None, query = "DELETE FROM clean_minicensus_main WHERE instance_id=" + iid + "; DELETE FROM clean_minicensus_people WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_death_info WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_hh_sub WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_mosquito_net WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_water WHERE instance_id= " + iid + ";", who = 'Joe Brew')
+
+iid = "'c76e0157-d460-46e6-895f-447c65f8e667'"
+implement(id = None, query = "DELETE FROM clean_minicensus_main WHERE instance_id=" + iid + "; DELETE FROM clean_minicensus_people WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_death_info WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_hh_sub WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_mosquito_net WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_water WHERE instance_id= " + iid + ";", who = 'Joe Brew')
+
+iid = "'ccad32f7-ee77-48ee-b2b3-fcf148e0c644'"
+implement(id = None, query = "DELETE FROM clean_minicensus_main WHERE instance_id=" + iid + "; DELETE FROM clean_minicensus_people WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_death_info WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_hh_sub WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_mosquito_net WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_water WHERE instance_id= " + iid + ";", who = 'Joe Brew')
+
+iid = "'cf767a00-c922-4a98-8e14-dac9d17ba133'"
+implement(id = None, query = "DELETE FROM clean_minicensus_main WHERE instance_id=" + iid + "; DELETE FROM clean_minicensus_people WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_death_info WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_hh_sub WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_mosquito_net WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_water WHERE instance_id= " + iid + ";", who = 'Joe Brew')
+
+iid = "'e9fd8e09-52cf-49d6-9fde-0790e7e8c931'"
+implement(id = None, query = "DELETE FROM clean_minicensus_main WHERE instance_id=" + iid + "; DELETE FROM clean_minicensus_people WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_death_info WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_hh_sub WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_mosquito_net WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_water WHERE instance_id= " + iid + ";", who = 'Joe Brew')
+
+iid = "'008bbd69-f90f-4d17-a580-7d029d0704be'"
+implement(id = None, query = "DELETE FROM clean_minicensus_main WHERE instance_id=" + iid + "; DELETE FROM clean_minicensus_people WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_death_info WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_hh_sub WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_mosquito_net WHERE instance_id= " + iid + "; DELETE FROM clean_minicensus_repeat_water WHERE instance_id= " + iid + ";", who = 'Joe Brew')
+
 
 dbconn.commit()
 cur.close()
