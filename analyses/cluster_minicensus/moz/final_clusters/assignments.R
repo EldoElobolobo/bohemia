@@ -387,68 +387,121 @@ if('cdc_light_trap_livestock_enclosures_clusters.csv' %in% dir()){
     dplyr::select(-dummy, -cs) %>%
     mutate(type = 'CDC light trap livestock enclosure cluster')
   write_csv(cdc_light_trap_livestock_enclosures_clusters, 'cdc_light_trap_livestock_enclosures_clusters.csv')
+} 
+# Having established the 6 clusters, get all the livestock-holding households in those clusters
+if('cdc_light_trap_livestock_enclosures_clusters_all_hh.csv' %in% dir()){
+  cdc_light_trap_livestock_enclosures_clusters_all_hh <- 
+    read_csv('cdc_light_trap_livestock_enclosures_clusters_all_hh.csv')
+  message('reading')
+} else {
+  cdc_light_trap_livestock_enclosures_clusters_all_hh <- 
+    pd_moz$minicensus_main %>%
+    mutate(hamlet_code = substr(hh_id, 1, 3)) %>%
+    dplyr::select(instance_id,
+                  hamlet_code,
+                  wid,
+                  hh_id,
+                  hh_geo_location,
+                  # Cattle
+                  hh_animals_distance_cattle_dry_season,
+                  hh_animals_distance_cattle_rainy_season,
+                  hh_animals_where_cattle_dry_season,
+                  hh_animals_where_cattle_rainy_season,
+                  # Pigs
+                  hh_animals_dry_season_distance_pigs, 
+                  hh_animals_rainy_season_distance_pigs,
+                  hh_animals_rainy_season_pigs,
+                  hh_animals_dry_season_pigs) %>%
+    left_join(hh_level %>%
+                dplyr::select(instance_id, cluster)) %>%
+    filter(!is.na(cluster)) %>%
+    filter(cluster %in% cdc_light_trap_livestock_enclosures_clusters$cluster)
+  locs <- extract_ll(cdc_light_trap_livestock_enclosures_clusters_all_hh$hh_geo_location)
+  cdc_light_trap_livestock_enclosures_clusters_all_hh <- bind_cols(cdc_light_trap_livestock_enclosures_clusters_all_hh, locs)
+  cdc_light_trap_livestock_enclosures_clusters_all_hh <- cdc_light_trap_livestock_enclosures_clusters_all_hh %>%
+    filter(!is.na(hh_animals_rainy_season_pigs) |
+             !is.na(hh_animals_dry_season_pigs) |
+             !is.na(hh_animals_where_cattle_dry_season) |
+             !is.na(hh_animals_where_cattle_rainy_season)) %>%
+    mutate(description = 
+             paste0(
+               ifelse(!is.na(hh_animals_dry_season_pigs),
+                      paste0('Pigs in dry season: ', hh_animals_dry_season_pigs, '. '),
+                      ''),
+               ifelse(!is.na(hh_animals_rainy_season_pigs),
+                      paste0('Pigs in rainy season: ', hh_animals_dry_season_pigs, '. '),
+                      ''),
+               ifelse(!is.na(hh_animals_where_cattle_rainy_season),
+                      paste0('Cattle in rainy season: ', hh_animals_where_cattle_rainy_season, '. '),
+                      ''),
+               ifelse(!is.na(hh_animals_where_cattle_dry_season),
+                      paste0('Cattle in dry season: ', hh_animals_where_cattle_dry_season, '. '),
+                      '')
+             ))
   
-  # Having established the 6 clusters, get all the livestock-holding households in those clusters
-  # Deliverable 1: A “guideline dataset” which is a table of all households from the minicensus which indicated (in the minicensus) a nearby livestock enclosure, and are in the 6 clusters, with columns showing household ID, cluster.  This table should be randomly ordered, since its ordering will serve to ensure that enrollment is random. 
-  if('cdc_light_trap_livestock_enclosures_clusters_all_hh.csv' %in% dir()){
-    cdc_light_trap_livestock_enclosures_clusters_all_hh <- 
-      read_csv('cdc_light_trap_livestock_enclosures_clusters_all_hh.csv')
-    message('reading')
-  } else {
-    cdc_light_trap_livestock_enclosures_clusters_all_hh <- 
-      pd_moz$minicensus_main %>%
-      mutate(hamlet_code = substr(hh_id, 1, 3)) %>%
-      dplyr::select(instance_id,
-                    hamlet_code,
-                    wid,
-                    hh_id,
-                    hh_geo_location,
-                    # Cattle
-                    hh_animals_distance_cattle_dry_season,
-                    hh_animals_distance_cattle_rainy_season,
-                    hh_animals_where_cattle_dry_season,
-                    hh_animals_where_cattle_rainy_season,
-                    # Pigs
-                    hh_animals_dry_season_distance_pigs, 
-                    hh_animals_rainy_season_distance_pigs,
-                    hh_animals_rainy_season_pigs,
-                    hh_animals_dry_season_pigs) %>%
-      left_join(hh_level %>%
-                  dplyr::select(instance_id, cluster)) %>%
-      filter(!is.na(cluster)) %>%
-      filter(cluster %in% cdc_light_trap_livestock_enclosures_clusters$cluster)
-    locs <- extract_ll(cdc_light_trap_livestock_enclosures_clusters_all_hh$hh_geo_location)
-    cdc_light_trap_livestock_enclosures_clusters_all_hh <- bind_cols(cdc_light_trap_livestock_enclosures_clusters_all_hh, locs)
-    cdc_light_trap_livestock_enclosures_clusters_all_hh <- cdc_light_trap_livestock_enclosures_clusters_all_hh %>%
-      filter(!is.na(hh_animals_rainy_season_pigs) |
-               !is.na(hh_animals_dry_season_pigs) |
-               !is.na(hh_animals_where_cattle_dry_season) |
-               !is.na(hh_animals_where_cattle_rainy_season)) %>%
-      mutate(description = 
-               paste0(
-                 ifelse(!is.na(hh_animals_dry_season_pigs),
-                        paste0('Pigs in dry season: ', hh_animals_dry_season_pigs, '. '),
-                        ''),
-                 ifelse(!is.na(hh_animals_rainy_season_pigs),
-                        paste0('Pigs in rainy season: ', hh_animals_dry_season_pigs, '. '),
-                        ''),
-                 ifelse(!is.na(hh_animals_where_cattle_rainy_season),
-                        paste0('Cattle in rainy season: ', hh_animals_where_cattle_rainy_season, '. '),
-                        ''),
-                 ifelse(!is.na(hh_animals_where_cattle_dry_season),
-                        paste0('Cattle in dry season: ', hh_animals_where_cattle_dry_season, '. '),
-                        '')
-               ))
-    
-    write_csv(cdc_light_trap_livestock_enclosures_clusters_all_hh, 'cdc_light_trap_livestock_enclosures_clusters_all_hh.csv')
-    message('writing')
-  }
+  write_csv(cdc_light_trap_livestock_enclosures_clusters_all_hh, 'cdc_light_trap_livestock_enclosures_clusters_all_hh.csv')
+  message('writing')
 }
-  
-#  
 
 
-  
+# CDC Light Trap Livestock Enclosures Deliverable 1: A “guideline dataset” which is a table of all households from the minicensus which indicated (in the minicensus) a nearby livestock enclosure, and are in the 6 clusters, with columns showing household ID, cluster.  This table should be randomly ordered, since its ordering will serve to ensure that enrollment is random. 
+if('cdc_light_trap_livestock_enclosures_clusters_deliverable_1.csv' %in% dir()){
+  cdc_light_trap_livestock_enclosures_clusters_deliverable_1 <- read_csv('cdc_light_trap_livestock_enclosures_clusters_deliverable_1.csv')
+} else {
+  cdc_light_trap_livestock_enclosures_clusters_deliverable_1 <-
+    left_join(
+      cdc_light_trap_livestock_enclosures_clusters_all_hh,
+      bohemia::locations %>% dplyr::select(
+        hamlet_code = code,
+        Ward,
+        Village,
+        Hamlet
+      )
+    ) %>%
+    dplyr::select(hh_id, cluster, Ward, Village, Hamlet) %>%
+    mutate(sample_type = 'CDC light trap livestock enclosures guideline') %>%
+    mutate(observation = ' ')
+  write_csv(cdc_light_trap_livestock_enclosures_clusters_deliverable_1, 'cdc_light_trap_livestock_enclosures_clusters_deliverable_1.csv')
+}
+
+# CDC Light Trap Livestock Enclosures Deliverable 2: 6 separate operational lists (1 per cluster) which consist of the rows of the “guideline dataset” but contain only the households for the cluster in question. Each of these 6 tables will be identically formatted to deliverable 1, but with (a) few rowers and (b) a clear “title” indicating which cluster number the list is for (ie, 1 through 6). 
+if(!'cdc_light_trap_livestock_enclosures_clusters_deliverable_2.zip' %in% dir()){
+  if(!dir.exists('cdc_light_trap_livestock_enclosures_clusters_deliverable_2')){
+    dir.create('cdc_light_trap_livestock_enclosures_clusters_deliverable_2')
+    cluster_numbers <- sort(unique(cdc_light_trap_livestock_enclosures_clusters_deliverable_1$cluster))
+    for(i in 1:length(cluster_numbers)){
+      this_cluster_number <- cluster_numbers[i]
+      these_data <- cdc_light_trap_livestock_enclosures_clusters_deliverable_1 %>% filter(cluster == this_cluster_number)
+      write_csv(these_data,
+                file = paste0('cdc_light_trap_livestock_enclosures_clusters_deliverable_2/',
+                              'cluster_', this_cluster_number, '.csv'))
+    }
+  }
+  zip(zipfile = 'cdc_light_trap_livestock_enclosures_clusters_deliverable_2.zip',
+      files = paste0('cdc_light_trap_livestock_enclosures_clusters_deliverable_2'))
+  unlink('cdc_light_trap_livestock_enclosures_clusters_deliverable_2', recursive = TRUE)
+}
+
+# # CDC Light Trap Livestock Enclosures Deliverable 3: For every cluster above (deliverable 2) a list of ONLY 2 Livestock Enclosure IDs to assign to the first 2 LE that the FW finds that qualify for enrollment.
+# Using ID notation from: https://docs.google.com/document/d/118kY_VRB_OxpUg7Iau7_7Lyl12__tC-GJjRo9W36Qw8/edit
+if('cdc_light_trap_livestock_enclosures_clusters_deliverable_3.csv' %in% dir()){
+  cdc_light_trap_livestock_enclosures_clusters_deliverable_3 <- read_csv('cdc_light_trap_livestock_enclosures_clusters_deliverable_3.csv')
+} else {
+  cluster_numbers <- sort(unique(cdc_light_trap_livestock_enclosures_clusters$cluster))
+  out_list <- list()
+  for(i in 1:length(cluster_numbers)){
+    this_cluster_number <- cluster_numbers[i]
+    these_ids <- paste0('L', this_cluster_number, '-', 11:12)
+    out <- tibble(id = these_ids,
+                  cluster = this_cluster_number,
+                  sample_type = 'CDC light trap livestock enclosure IDs for assignment')
+    out_list[[i]] <- out
+  }
+  cdc_light_trap_livestock_enclosures_clusters_deliverable_3 <- bind_rows(out_list)
+  write_csv(cdc_light_trap_livestock_enclosures_clusters_deliverable_3, 'cdc_light_trap_livestock_enclosures_clusters_deliverable_3.csv')  
+}
+
+
 # Make geographic files for use in maps.me
 if(!dir.exists('geographic_files')){
   dir.create('geographic_files')
