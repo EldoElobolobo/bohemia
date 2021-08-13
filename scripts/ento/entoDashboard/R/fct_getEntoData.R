@@ -58,7 +58,7 @@ getEntoData <- function(){
              Cluster = ifelse(site == "Household",hh_id,ifelse(site == "Livestock_Enclosure",le_id,site)))%>%
       dplyr::select(todays_date,site,paste0(n_diss), Cluster, n_dissected)
     
-    if(nrow(a4 >= 1)){
+    if(nrow(a4) >= 1){
       a4_df <- a4[rep(seq(nrow(a4)), a4$n_dissected),]
       
       repl <- a4 %>%dplyr::select_at(dplyr::vars(contains("how_many_dis_")))%>%
@@ -83,7 +83,7 @@ getEntoData <- function(){
     temp_df <- data.frame(matrix(ncol = 3, nrow = nrow(a4)))
     A4df <- cbind(a4,temp_df)
     names(A4df) <- c("Date",
-                     "Cluster",
+                     "Household/Livestock ID",
                      "Collection Location (OR)",
                      "Species",
                      "Parity_Status",

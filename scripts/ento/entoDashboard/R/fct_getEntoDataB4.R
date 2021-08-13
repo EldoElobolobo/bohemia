@@ -1,6 +1,6 @@
 
 # Get data from odk server
-getEntoDataB4 = function(){
+getEntoDataB4 <- function(){
   require(readr)
   
   briefcase_dir <- "."
