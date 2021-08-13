@@ -262,3 +262,6 @@ function sanitizeCellValue(cellValue) {
     }
     return cellValue;
 }
+$( document ).ready(function() {
+  
+});

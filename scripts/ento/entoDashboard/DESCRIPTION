@@ -34,10 +34,13 @@ Imports:
     shinyWidgets,
     shinyjs,
     dashboardthemes,
-    here
+    here,
+    pkgload,
+    magrittr,
+    lubridate
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.1
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

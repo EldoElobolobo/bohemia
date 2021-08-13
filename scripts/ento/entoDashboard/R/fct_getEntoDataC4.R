@@ -51,7 +51,7 @@ getEntoDataC4 <- function(){
   c4_ind_mosq <- function(df){
     
     n_var <- df %>%
-      dplyr::select_at(dplyr::vars(contains("_kept_survival")))
+      dplyr::select_at(dplyr::vars(contains("_kept_survival")))%>%colnames()
     c4 <- df %>%
       dplyr::mutate(num_survive = rowSums(.[grepl("_kept_survival", names(.))], na.rm = TRUE))%>%
       dplyr::select(todays_date,household_id,num_survive)%>%

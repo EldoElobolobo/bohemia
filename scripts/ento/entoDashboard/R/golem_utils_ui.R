@@ -332,6 +332,201 @@ col_1 <- function(...){
 #' }
 
 
+
+CSS <- "
+table td.withPlaceholder:empty:before {
+  content: 'integer';
+  color: gray;
+  font-style: italic;
+}
+
+table td.withPlaceholder2:empty:before {
+  content: 'qrcode';
+  color: gray;
+  font-style: italic;
+}
+
+"
+
+callback <- c(
+  "var tbl = $(table.table().node());",
+  "var id = tbl.closest('.datatables').attr('id');",
+  "function onUpdate(updatedCell, updatedRow, oldValue) {",
+  "  var cellinfo = [{",
+  "    row: updatedCell.index().row + 1,",
+  "    col: updatedCell.index().column + 1,",
+  "    value: updatedCell.data()",
+  "  }];",
+  "  Shiny.setInputValue(id + '_cell_edit:DT.cellInfo', cellinfo);",
+  "}",
+  "table.MakeCellsEditable({",
+  "  onUpdate: onUpdate,",
+  "  inputCss: 'my-input-class',",
+  "  columns: [3,4,5,6,7,8,9,10,11,12,13,14,15,16],",
+  "  confirmationButton: {",
+  "    confirmCss: 'my-confirm-class',",
+  "    cancelCss: 'my-cancel-class'",
+  "  },",
+  "  inputTypes: [",
+  "    {",
+  "      column: 3,",
+  "      type: 'list',",
+  "      options: [",
+  "        {value: 'None', display: 'None'},",
+  "        {value: 'Yes', display: 'Y'},",
+  "        {value: 'No', display: 'N'}",
+  "      ]",
+  "    },",
+  "    {",
+  "      column: 4,",
+  "      type: 'list',",
+  "      options: [",
+  "        {value: 'None', display: 'None'},",
+  "        {value: 'Yes', display: 'Y'},",
+  "        {value: 'No', display: 'N'}",
+  "      ]",
+  "    },",
+  "    {",
+  "      column: 5,",
+  "      type: 'list',",
+  "      options: [",
+  "        {value: 'None', display: 'None'},",
+  "        {value: 'Yes', display: 'Y'},",
+  "        {value: 'No', display: 'N'}",
+  "      ]",
+  "    },",
+  "    {",
+  "      column: 6,",
+  "      type: 'list',",
+  "      options: [",
+  "        {value: 'None', display: 'None'},",
+  "        {value: 'Yes', display: 'Y'},",
+  "        {value: 'No', display: 'N'}",
+  "      ]",
+  "    },",
+  "    {",
+  "      column: 7,",
+  "      type: 'list',",
+  "      options: [",
+  "        {value: 'None', display: 'None'},",
+  "        {value: 'Yes', display: 'Y'},",
+  "        {value: 'No', display: 'N'}",
+  "      ]",
+  "    },",
+  "    {",
+  "      column: 8,",
+  "      type: 'list',",
+  "      options: [",
+  "        {value: 'None', display: 'None'},",
+  "        {value: 'Yes', display: 'Y'},",
+  "        {value: 'No', display: 'N'}",
+  "      ]",
+  "    },",
+  "    {",
+  "      column: 9,",
+  "      type: 'list',",
+  "      options: [",
+  "        {value: 'None', display: 'None'},",
+  "        {value: 'Yes', display: 'Y'},",
+  "        {value: 'No', display: 'N'}",
+  "      ]",
+  "    },",
+  "    {",
+  "      column: 10,",
+  "      type: 'list',",
+  "      options: [",
+  "        {value: 'None', display: 'None'},",
+  "        {value: 'Yes', display: 'Y'},",
+  "        {value: 'No', display: 'N'}",
+  "      ]",
+  "    },",
+  "    {",
+  "      column: 11,",
+  "      type: 'list',",
+  "      options: [",
+  "        {value: 'None', display: 'None'},",
+  "        {value: 'Yes', display: 'Y'},",
+  "        {value: 'No', display: 'N'}",
+  "      ]",
+  "    },",
+  "    {",
+  "      column: 12,",
+  "      type: 'list',",
+  "      options: [",
+  "        {value: 'None', display: 'None'},",
+  "        {value: 'Yes', display: 'Y'},",
+  "        {value: 'No', display: 'N'}",
+  "      ]",
+  "    },",
+  "    {",
+  "      column: 13,",
+  "      type: 'list',",
+  "      options: [",
+  "        {value: 'None', display: 'None'},",
+  "        {value: 'Yes', display: 'Y'},",
+  "        {value: 'No', display: 'N'}",
+  "      ]",
+  "    },",
+  "    {",
+  "      column: 14,",
+  "      type: 'list',",
+  "      options: [",
+  "        {value: 'None', display: 'None'},",
+  "        {value: 'Yes', display: 'Y'},",
+  "        {value: 'No', display: 'N'}",
+  "      ]",
+  "    },",
+  "    {",
+  "      column: 15,",
+  "      type: 'list',",
+  "      options: [",
+  "        {value: 'None', display: 'None'},",
+  "        {value: 'Yes', display: 'Y'},",
+  "        {value: 'No', display: 'N'}",
+  "      ]",
+  "    },",
+  "    {",
+  "      column: 16,",
+  "      type: 'list',",
+  "      options: [",
+  "        {value: 'None', display: 'None'},",
+  "        {value: 'Yes', display: 'Y'},",
+  "        {value: 'No', display: 'N'}",
+  "      ]",
+  "    }",
+  "  ]",
+  "});"
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# for creating buttons in button column on B4 table
+create_btns <- function(x) {
+  x %>%
+    purrr::map_chr(~
+                     paste0(
+                       '<div class = "btn-group">
+                   <button class="btn btn-default action-button btn-info action_button" id="edit_',
+                       .x, '" type="button" onclick=get_id(this.id)><i class="fa fa-qrcode" aria-hidden="true"></i></i></button>
+                   </div>'
+                     ))
+}
+
+#get ento b3 data
+
+
 # define some credentials
 credentials <- data.frame(
   user = c("admin", "databrewuser2"), # mandatory
@@ -369,6 +564,33 @@ sketch = htmltools::withTags(table(
     ),
     tr(
       lapply(rep(c('D1','D2','D3','D4','D5','D6','D7'),2),th)
+    )
+  )
+)
+)
+
+
+sketchb4 = htmltools::withTags(table(
+  class = 'display',
+  thead(
+    tr(
+      th(rowspan = "2",'Date'),
+      th(rowspan = "2",'HH ID'),
+      th(rowspan = "2",'Indoors or Outdoors'),
+      th(rowspan = "2",'Time period'),
+      th(rowspan = "2",'Species'),
+      th(colspan = "2",'D1 - DM'),
+      th(colspan = "2",'D2 - DM'),
+      th(colspan = "2",'D3 - DM'),
+      th(colspan = "2",'D4 - DM'),
+      th(colspan = "2",'D5 - DM'),
+      th(colspan = "2",'D6 - DM'),
+      th(colspan = "2",'D7 - DM'),
+      th(colspan = "2",'Alive at D7'),
+      th(rowspan = "2",'QR Scanner')
+    ),
+    tr(
+      lapply(rep(c('N','QR'),8),th)
     )
   )
 )

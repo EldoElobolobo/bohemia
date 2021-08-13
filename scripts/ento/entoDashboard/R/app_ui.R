@@ -44,7 +44,9 @@ app_ui <- function(request) {
                                              h4("PARITY DISSECTION AND WING LENGTH", style = "color:#2E86C1; text-align: center; padding: 5px;"),
                                              div(style = 'overflow-x: scroll',shinycssloaders::withSpinner(shiny::uiOutput('A4'),type = 1, size = 1))
                                                       ),
-                                    tabPanel("B4", "B4 table here"),
+                                    tabPanel("B4", 
+                                             h4("SURVIVAL TESTS", style = "color:#2E86C1; text-align: center; padding: 5px;"),
+                                             div(style = 'overflow-x: scroll', shinycssloaders::withSpinner(DT::DTOutput('dt_table'),type = 1, size = 1))),
                                     tabPanel("C4", 
                                              h4("GONOTROPICAL CYCLE LENGTH AND SURVIVAL", style = "color:#2E86C1; text-align: center; padding: 5px;"),
                                              div(style = 'overflow-x: scroll', shinycssloaders::withSpinner(DT::DTOutput('dt'),type = 1, size = 1)))
@@ -76,9 +78,16 @@ golem_add_external_resources <- function(){
     bundle_resources(
       path = app_sys('app/www'),
       app_title = 'entoDashboard',
-      name = "CellEdit",
+      name = "dataTables.cellEdit.js",
       version = "1.0.19",
-      all_files = TRUE
+      all_files = FALSE
+    ),
+    bundle_resources(
+      path = app_sys('app/www'),
+      app_title = 'entoDashboard',
+      name = "dataTables.rowsGroup.js",
+      version = "2.0.0",
+      all_files = FALSE
     ),
     # Add here other external resources
     # for example, you can add shinyalert::useShinyalert()
