@@ -88,7 +88,7 @@ if(replace_local_files){
     file.remove(remove_file)
   }
   
-  use_cached <- TRUE
+  use_cached <- FALSE
   for(the_country in c('Mozambique', 'Tanzania')){
     the_iso <- ifelse(the_country == 'Mozambique', 'moz', 'tza')
     out <- load_odk_data(local = is_local, the_country = the_country, efficient = TRUE, use_cached = use_cached, con = con)
@@ -174,9 +174,10 @@ gps <- left_join(
 
 ```{r, eval = FALSE}
 # Read data sent from Imani for ad-hoc comparison 
-left <- tza$minicensus_main %>% dplyr::select(hh_id, instance_id_psql = instance_id) %>% mutate(in_databrew = TRUE)
-right <- readxl::read_excel('data/Minicensus_clean_LocalDB.xlsx') %>% dplyr::select(hh_id, instance_id_imani = instanceid) %>%
-  mutate(in_ihi = TRUE)
+left <- tza$minicensus_main %>% dplyr::select(hh_id_databrew = hh_id, instance_id) %>% mutate(in_databrew = TRUE)
+right <- readxl::read_excel('data/Minicensus_clean_LocalDB.xlsx') %>% dplyr::select(hh_id_imani = hh_id, instance_id = instanceid) %>%
+  mutate(in_ihi = TRUE) %>%
+  mutate(instance_id = gsub('uuid:', '', instance_id))
 ad_hoc <- full_join(left, right) %>%
   mutate(in_databrew = ifelse(is.na(in_databrew), FALSE, in_databrew),
          in_ihi = ifelse(is.na(in_ihi), FALSE, in_ihi)) %>%
