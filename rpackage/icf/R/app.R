@@ -181,7 +181,7 @@ error_list <- c('Participant did not sign',
                 'Handwriting ilegibile',
                 'Incorrect participant ID',
                 'Overwriting and/or obliteration')
-
+error_list <- paste0(1:length(error_list), '. ', error_list)
 
 app_ui <- function(request) {
   options(scipen = '999')
@@ -221,11 +221,13 @@ app_ui <- function(request) {
               ),
               
               fluidRow(
-                column(4,
+                column(3,
                        uiOutput('ui_date_input')),
-                column(4, 
+                column(3,
+                       uiOutput('ui_hamlet_filter')),
+                column(3, 
                        uiOutput('ui_hh_id')),
-                column(4,
+                column(3,
                        textOutput('person_id_text1'))),
               fluidRow(column(12,
                               DT::dataTableOutput('person_table'))),
@@ -303,42 +305,65 @@ app_ui <- function(request) {
 #' @import leaflet
 app_server <- function(input, output, session) {
   
-  logged_in <- reactiveVal(value = TRUE)
+  
+  observeEvent(input$show, {
+    lit <- log_in_text()
+    showModal(modalDialog(
+      title = "Log in",
+      fluidPage(
+        fluidRow(
+          column(6,
+                 textInput('user', 'Bohemia Fieldworker ID number')),
+          column(6,
+                 passwordInput('password', 'Password'))
+        ),
+        fluidRow(
+          column(12, align = 'center',
+                 actionButton('log_in', 'Log in'))
+        ),
+        fluidRow(
+          p(lit)
+        )
+      ),
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
+  
+  log_in_text <- reactiveVal(value = '')
+  logged_in <- reactiveVal(value = FALSE)
   observeEvent(input$log_in,{
-    logged_in(TRUE)
-    removeModal()
+    u <- input$user
+    u <- as.numeric(u)
+    p <- input$password
+    ok <- FALSE
+    if(u %in% c(313, 344, 377, 534, 403, 601)){
+      if(p == 'admin'){
+        logged_in(TRUE)
+        removeModal()
+        ok <- TRUE
+        log_in_text('')
+      }
+    }
+    if(ok){
+      log_in_text('Incorrect username and password')
+    }
   })
   
   output$top_button <- renderUI({
     li <- logged_in()
     if(li){
-      actionButton("log_out", "Log out")
+      # actionButton("log_out", "Log out")
+      fluidPage()
     } else {
-      actionButton("show", "Log in")
+      h1(actionButton("show", "Log in"))
     }
   })
   
   # Create reactive objects for storing person ID
   person_ids <- reactiveValues(id1 = NA, id2 = NA)
   
-  
-  observeEvent(input$show, {
-    # logged_in(TRUE)
-    showModal(modalDialog(
-      title = "Log in",
-      fluidPage(
-        fluidRow(
-          column(6,
-                 textInput('email', 'Email')),
-          column(6,
-                 passwordInput('password', 'Password'))
-        ),
-        fluidRow(
-          actionButton('log_in', 'Log in')
-        )
-      )
-    ))
-  })
+
   observeEvent(input$log_out, {
     logged_in(FALSE)
   })
@@ -352,63 +377,105 @@ app_server <- function(input, output, session) {
   
   # Date input ui
   output$ui_date_input <- renderUI({
-    df <- data_list$main
-    dateInput('date_of_visit', 'Date of visit',min = min(df$date),
-              max = max(df$date))
+    li <- logged_in()
+    if(li){
+      df <- data_list$main
+      dateInput('date_of_visit', 'Date of visit',min = min(df$date),
+                max = max(df$date))
+    }
+    
   })
   output$ui_date_input2 <- renderUI({
-    df <- data_list$list3
-    ok <- FALSE
-    if(!is.null(df)){
-      if(nrow(df) > 0){
-        ok <- TRUE
+    li <- logged_in()
+    if(li){
+      df <- data_list$list3
+      ok <- FALSE
+      if(!is.null(df)){
+        if(nrow(df) > 0){
+          ok <- TRUE
+        }
       }
-    }
-    if(ok){
-      dateInput('date_of_visit2', 'Date of visit',min = min(df$date),
-                max = max(df$date)) 
-    } else {
-      NULL
+      if(ok){
+        dateInput('date_of_visit2', 'Date of visit',min = min(df$date),
+                  max = max(df$date)) 
+      } else {
+        NULL
+      }
     }
   })
   
-  
-  
-  output$ui_hh_id <- renderUI({
-    date_of_visit <- input$date_of_visit
-    ok <- FALSE
-    if(!is.null(date_of_visit)){
-      if(length(date_of_visit) > 0){
-        ok <- TRUE
+  output$ui_hamlet_filter <- renderUI({
+    li <- logged_in()
+    if(li){
+      date_of_visit <- input$date_of_visit
+      ok <- FALSE
+      if(!is.null(date_of_visit)){
+        if(length(date_of_visit) > 0){
+          ok <- TRUE
+        }
+      }
+      if(ok){
+        message('---Setting up the hh_id input')
+        df <- data_list$main
+        choices <- df %>% filter(date == date_of_visit) 
+        the_choices <- sort(unique(choices$hh_id))
+        the_choices <- sort(unique(substr(the_choices, 1, 3)))
+        selectizeInput('hamlet_id', 'Filter by hamlet ID', choices = the_choices,
+                       multiple = TRUE,
+                       selected = the_choices)
+      } else {
+        NULL
       }
     }
-    if(ok){
-      message('---Setting up the hh_id input')
-      df <- data_list$main
-      choices <- df %>% filter(date == date_of_visit) 
-      the_choices <- sort(unique(choices$hh_id))
-      selectInput('hh_id', 'Household ID', choices = the_choices)
-    } else {
-      NULL
+  })
+  
+  output$ui_hh_id <- renderUI({
+    li <- logged_in()
+    if(li){
+      date_of_visit <- input$date_of_visit
+      ok <- FALSE
+      if(!is.null(date_of_visit)){
+        if(length(date_of_visit) > 0){
+          ok <- TRUE
+        }
+      }
+      if(ok){
+        message('---Setting up the hh_id input')
+        df <- data_list$main
+        choices <- df %>% filter(date == date_of_visit) 
+        hid <- input$hamlet_id
+        if(!is.null(hid)){
+          choices <- choices %>%
+            mutate(hamlet_id = substr(hh_id, 1, 3)) %>%
+            filter(hamlet_id %in% hid)
+        }
+        the_choices <- sort(unique(choices$hh_id))
+        selectInput('hh_id', 'Household ID', choices = the_choices)
+      } else {
+        NULL
+      }
     }
   })
   output$ui_hh_id2 <- renderUI({
-    date_of_visit <- input$date_of_visit2
-    
-    ok <- FALSE
-    if(!is.null(date_of_visit)){
-      if(length(date_of_visit) > 0){
-        ok <- TRUE
+    li <- logged_in()
+    if(li){
+      date_of_visit <- input$date_of_visit2
+      
+      ok <- FALSE
+      if(!is.null(date_of_visit)){
+        if(length(date_of_visit) > 0){
+          ok <- TRUE
+        }
       }
-    }
-    if(ok){
-      message('---Setting up the hh_id input')
-      df <- data_list$list3
-      choices <- df %>% filter(date == date_of_visit) 
-      the_choices <- sort(unique(choices$hh_id))
-      selectInput('hh_id2', 'Household ID', choices = the_choices)
-    } else {
-      NULL
+      if(ok){
+        message('---Setting up the hh_id input')
+        df <- data_list$list3
+        choices <- df %>% filter(date == date_of_visit) 
+        the_choices <- sort(unique(choices$hh_id))
+        selectInput('hh_id2', 'Household ID', choices = the_choices)
+      } else {
+        NULL
+      }
     }
   })
   
@@ -534,10 +601,16 @@ app_server <- function(input, output, session) {
   
   # Get the selected ID text
   output$person_id_text1 <- renderText({
-    paste0('Selected ID: ', person_ids$id1)
+    li <- logged_in()
+    if(li){
+      paste0('Selected ID: ', person_ids$id1)
+    }
   })
   output$person_id_text2 <- renderText({
-    paste0('Selected ID: ', person_ids$id2)
+    li <- logged_in()
+    if(li){
+      paste0('Selected ID: ', person_ids$id2)
+    }
   })
   
   # Observe the clicks on the person table and update the objects accordingly
@@ -558,186 +631,210 @@ app_server <- function(input, output, session) {
   })
   
   output$ui_icf_present <- renderUI({
-    # Observe changes to df to reset
-    x <- dfr()
-    radioButtons('icf_present', 'Is the ICF present?', choices = c('Yes', 'No'),
-                 selected = character(0),
-                 inline = TRUE)
-  })
-  output$ui_icf_present2 <- renderUI({
-    # Observe changes to df to reset
-    x <- dfr2()
-    # See if there is anything in the correction list anywa
-    x <- input$date_of_visit2
-    if(!is.null(x)){
-      radioButtons('icf_present2', 'Is the ICF present?', choices = c('Yes', 'No'),
+    li <- logged_in()
+    if(li){
+      # Observe changes to df to reset
+      x <- dfr()
+      radioButtons('icf_present', 'Is the ICF present?', choices = c('Yes', 'No'),
                    selected = character(0),
                    inline = TRUE)
-    } else {
-      fluidPage(
-        fluidRow(
-          h3('No pending items to be returned.')
-        ),
-        fluidRow(
-          p('This page will populate after some ICFs have been marked as erroneous.')
+    }
+  })
+  output$ui_icf_present2 <- renderUI({
+    li <- logged_in()
+    if(li){
+      # Observe changes to df to reset
+      x <- dfr2()
+      # See if there is anything in the correction list anywa
+      x <- input$date_of_visit2
+      if(!is.null(x)){
+        radioButtons('icf_present2', 'Is the ICF present?', choices = c('Yes', 'No'),
+                     selected = character(0),
+                     inline = TRUE)
+      } else {
+        fluidPage(
+          fluidRow(
+            h3('No pending items to be returned.')
+          ),
+          fluidRow(
+            p('This page will populate after some ICFs have been marked as erroneous.')
+          )
         )
-      )
+      }
     }
 
   })
   
   output$ui_present <- renderUI({
-    icf_present <- input$icf_present
-    if(!is.null(icf_present)){
-      if(icf_present == 'No'){
-        fluidPage(
-          h3('Report missing ICF (list 1)'),
-          actionButton('submit_list_1', 'Submit data')
-        )
+    li <- logged_in()
+    if(li){
+      icf_present <- input$icf_present
+      if(!is.null(icf_present)){
+        if(icf_present == 'No'){
+          fluidPage(
+            h3('Report missing ICF (list 1)'),
+            actionButton('submit_list_1', 'Submit data')
+          )
+        }
       }
     }
   })
   
   output$ui_present2 <- renderUI({
-    icf_present <- input$icf_present2
-    if(!is.null(icf_present)){
-      if(icf_present == 'No'){
-        fluidPage(
-          # h3('Report missing ICF (list 1)'),
-          # actionButton('submit_list_1', 'Submit data')
-          h5('This ICF has already been marked as requiring corrections. Wait for the correction to be submitted.')
-        )
+    li <- logged_in()
+    if(li){
+      icf_present <- input$icf_present2
+      if(!is.null(icf_present)){
+        if(icf_present == 'No'){
+          fluidPage(
+            # h3('Report missing ICF (list 1)'),
+            # actionButton('submit_list_1', 'Submit data')
+            h5('This ICF has already been marked as requiring corrections. Wait for the correction to be submitted.')
+          )
+        }
       }
     }
   })
   
   output$ui_big <- renderUI({
-    icf_present <- input$icf_present
-    message('---Setting up ui_big')
-    
-    # Observe changes to the main dataframe and reset
-    x <- dfr()
-    
-    if(!is.null(icf_present)){
-      if(icf_present == 'Yes'){
-        fluidPage(
-          fluidRow(
-            h3('Transcription of errors detected in the field'),
-          p('Check the "Verification list for supervisors", did the ICF present any of the following errors detected by the supervisor in the field?'),
-          mod_error_check_ui("error_1", error_list[1]),
-          mod_error_check_ui("error_2", error_list[2]),
-          mod_error_check_ui("error_3", error_list[3]),
-          mod_error_check_ui("error_4", error_list[4]),
-          mod_error_check_ui("error_5", error_list[5]),
-          mod_error_check_ui("error_6", error_list[6]),
-          mod_error_check_ui("error_7", error_list[7]),
-          mod_error_check_ui("error_8", error_list[8]),
-          mod_error_check_ui("error_9", error_list[9]),
-          mod_error_check_ui("error_10", error_list[10]),
-          mod_error_check_ui("error_11", error_list[11]),
-          mod_error_check_ui("error_12", error_list[12]),
-          checkboxInput('no_errors', 'No errors', value = FALSE)),
-        fluidRow(
-          h3('Errors detected by the archivist'),
-          p('Does the ICF present any of the following errors?'),
-          mod_error_check_archivist_ui('error_arc_1', error_list[1]),
-          mod_error_check_archivist_ui('error_arc_2', error_list[2]),
-          mod_error_check_archivist_ui('error_arc_3', error_list[3]),
-          mod_error_check_archivist_ui('error_arc_4', error_list[4]),
-          mod_error_check_archivist_ui('error_arc_5', error_list[5]),
-          mod_error_check_archivist_ui('error_arc_6', error_list[6]),
-          mod_error_check_archivist_ui('error_arc_7', error_list[7]),
-          mod_error_check_archivist_ui('error_arc_8', error_list[8]),
-          mod_error_check_archivist_ui('error_arc_9', error_list[9]),
-          mod_error_check_archivist_ui('error_arc_10', error_list[10]),
-          mod_error_check_archivist_ui('error_arc_11', error_list[11]),
-          mod_error_check_archivist_ui('error_arc_12', error_list[12]),
-          mod_error_check_archivist_ui('error_arc_13', error_list[13]),
-          mod_error_check_archivist_ui('error_arc_14', error_list[14]),
-          mod_error_check_archivist_ui('error_arc_15', error_list[15]),
-          mod_error_check_archivist_ui('error_arc_16', error_list[16]),
-          mod_error_check_archivist_ui('error_arc_17', error_list[17]),
-          mod_error_check_archivist_ui('error_arc_18', error_list[18]),
-          mod_error_check_archivist_ui('error_arc_19', error_list[19]),
-          mod_error_check_archivist_ui('error_arc_20', error_list[20]),
-          mod_error_check_archivist_ui('error_arc_21', error_list[21]),
-          mod_error_check_archivist_ui('error_arc_22', error_list[22]),
-          mod_error_check_archivist_ui('error_arc_23', error_list[23]),
-          checkboxInput('other', 'Other', value = FALSE),
-          uiOutput('ui_other'),
-          checkboxInput('no_errors_arc', 'No errors', value = FALSE),
-          uiOutput('ui_arc_end')
-        )
-        )
+    li <- logged_in()
+    if(li){
+      icf_present <- input$icf_present
+      message('---Setting up ui_big')
+      
+      # Observe changes to the main dataframe and reset
+      x <- dfr()
+      
+      if(!is.null(icf_present)){
+        if(icf_present == 'Yes'){
+          fluidPage(
+            fluidRow(
+              h3('Transcription of errors detected in the field'),
+              p('Check the "Verification list for supervisors", did the ICF present any of the following errors detected by the supervisor in the field?'),
+              mod_error_check_ui("error_1", error_list[1]),
+              mod_error_check_ui("error_2", error_list[2]),
+              mod_error_check_ui("error_3", error_list[3]),
+              mod_error_check_ui("error_4", error_list[4]),
+              mod_error_check_ui("error_5", error_list[5]),
+              mod_error_check_ui("error_6", error_list[6]),
+              mod_error_check_ui("error_7", error_list[7]),
+              mod_error_check_ui("error_8", error_list[8]),
+              mod_error_check_ui("error_9", error_list[9]),
+              mod_error_check_ui("error_10", error_list[10]),
+              mod_error_check_ui("error_11", error_list[11]),
+              mod_error_check_ui("error_12", error_list[12]),
+              checkboxInput('no_errors', 'No errors', value = FALSE)),
+            fluidRow(
+              h3('Errors detected by the archivist'),
+              p('Does the ICF present any of the following errors?'),
+              mod_error_check_archivist_ui('error_arc_1', error_list[1]),
+              mod_error_check_archivist_ui('error_arc_2', error_list[2]),
+              mod_error_check_archivist_ui('error_arc_3', error_list[3]),
+              mod_error_check_archivist_ui('error_arc_4', error_list[4]),
+              mod_error_check_archivist_ui('error_arc_5', error_list[5]),
+              mod_error_check_archivist_ui('error_arc_6', error_list[6]),
+              mod_error_check_archivist_ui('error_arc_7', error_list[7]),
+              mod_error_check_archivist_ui('error_arc_8', error_list[8]),
+              mod_error_check_archivist_ui('error_arc_9', error_list[9]),
+              mod_error_check_archivist_ui('error_arc_10', error_list[10]),
+              mod_error_check_archivist_ui('error_arc_11', error_list[11]),
+              mod_error_check_archivist_ui('error_arc_12', error_list[12]),
+              mod_error_check_archivist_ui('error_arc_13', error_list[13]),
+              mod_error_check_archivist_ui('error_arc_14', error_list[14]),
+              mod_error_check_archivist_ui('error_arc_15', error_list[15]),
+              mod_error_check_archivist_ui('error_arc_16', error_list[16]),
+              mod_error_check_archivist_ui('error_arc_17', error_list[17]),
+              mod_error_check_archivist_ui('error_arc_18', error_list[18]),
+              mod_error_check_archivist_ui('error_arc_19', error_list[19]),
+              mod_error_check_archivist_ui('error_arc_20', error_list[20]),
+              mod_error_check_archivist_ui('error_arc_21', error_list[21]),
+              mod_error_check_archivist_ui('error_arc_22', error_list[22]),
+              mod_error_check_archivist_ui('error_arc_23', error_list[23]),
+              checkboxInput('other', 'Other', value = FALSE),
+              uiOutput('ui_other'),
+              checkboxInput('no_errors_arc', 'No errors', value = FALSE),
+              uiOutput('ui_arc_end')
+            )
+          )
+        }
       }
     }
   })
   
   output$ui_big2 <- renderUI({
-    icf_present <- input$icf_present2
-    message('---Setting up ui_big2')
-    
-    # Observe changes to the main dataframe and reset
-    x <- dfr2()
-    
-    if(!is.null(icf_present)){
-      if(icf_present == 'Yes'){
-        fluidPage(
-          fluidRow(
-            h3('Errors detected by the archivist'),
-            p('Does the ICF present any of the following errors?'),
-            helpText('Pay special attention to the previously flagged errors in the above table.'),
-            mod_error_check_archivist_ui('error_arc_1b', error_list[1]),
-            mod_error_check_archivist_ui('error_arc_2b', error_list[2]),
-            mod_error_check_archivist_ui('error_arc_3b', error_list[3]),
-            mod_error_check_archivist_ui('error_arc_4b', error_list[4]),
-            mod_error_check_archivist_ui('error_arc_5b', error_list[5]),
-            mod_error_check_archivist_ui('error_arc_6b', error_list[6]),
-            mod_error_check_archivist_ui('error_arc_7b', error_list[7]),
-            mod_error_check_archivist_ui('error_arc_8b', error_list[8]),
-            mod_error_check_archivist_ui('error_arc_9b', error_list[9]),
-            mod_error_check_archivist_ui('error_arc_10b', error_list[10]),
-            mod_error_check_archivist_ui('error_arc_11b', error_list[11]),
-            mod_error_check_archivist_ui('error_arc_12b', error_list[12]),
-            mod_error_check_archivist_ui('error_arc_13b', error_list[13]),
-            mod_error_check_archivist_ui('error_arc_14b', error_list[14]),
-            mod_error_check_archivist_ui('error_arc_15b', error_list[15]),
-            mod_error_check_archivist_ui('error_arc_16b', error_list[16]),
-            mod_error_check_archivist_ui('error_arc_17b', error_list[17]),
-            mod_error_check_archivist_ui('error_arc_18b', error_list[18]),
-            mod_error_check_archivist_ui('error_arc_19b', error_list[19]),
-            mod_error_check_archivist_ui('error_arc_20b', error_list[20]),
-            mod_error_check_archivist_ui('error_arc_21b', error_list[21]),
-            mod_error_check_archivist_ui('error_arc_22b', error_list[22]),
-            mod_error_check_archivist_ui('error_arc_23b', error_list[23]),
-            checkboxInput('otherb', 'Other', value = FALSE),
-            uiOutput('ui_otherb'), 
-            checkboxInput('no_errors_arcb', 'No errors', value = FALSE),
-            uiOutput('ui_arc_endb') 
+    li <- logged_in()
+    if(li){
+      icf_present <- input$icf_present2
+      message('---Setting up ui_big2')
+      
+      # Observe changes to the main dataframe and reset
+      x <- dfr2()
+      
+      if(!is.null(icf_present)){
+        if(icf_present == 'Yes'){
+          fluidPage(
+            fluidRow(
+              h3('Errors detected by the archivist'),
+              p('Does the ICF present any of the following errors?'),
+              helpText('Pay special attention to the previously flagged errors in the above table.'),
+              mod_error_check_archivist_ui('error_arc_1b', error_list[1]),
+              mod_error_check_archivist_ui('error_arc_2b', error_list[2]),
+              mod_error_check_archivist_ui('error_arc_3b', error_list[3]),
+              mod_error_check_archivist_ui('error_arc_4b', error_list[4]),
+              mod_error_check_archivist_ui('error_arc_5b', error_list[5]),
+              mod_error_check_archivist_ui('error_arc_6b', error_list[6]),
+              mod_error_check_archivist_ui('error_arc_7b', error_list[7]),
+              mod_error_check_archivist_ui('error_arc_8b', error_list[8]),
+              mod_error_check_archivist_ui('error_arc_9b', error_list[9]),
+              mod_error_check_archivist_ui('error_arc_10b', error_list[10]),
+              mod_error_check_archivist_ui('error_arc_11b', error_list[11]),
+              mod_error_check_archivist_ui('error_arc_12b', error_list[12]),
+              mod_error_check_archivist_ui('error_arc_13b', error_list[13]),
+              mod_error_check_archivist_ui('error_arc_14b', error_list[14]),
+              mod_error_check_archivist_ui('error_arc_15b', error_list[15]),
+              mod_error_check_archivist_ui('error_arc_16b', error_list[16]),
+              mod_error_check_archivist_ui('error_arc_17b', error_list[17]),
+              mod_error_check_archivist_ui('error_arc_18b', error_list[18]),
+              mod_error_check_archivist_ui('error_arc_19b', error_list[19]),
+              mod_error_check_archivist_ui('error_arc_20b', error_list[20]),
+              mod_error_check_archivist_ui('error_arc_21b', error_list[21]),
+              mod_error_check_archivist_ui('error_arc_22b', error_list[22]),
+              mod_error_check_archivist_ui('error_arc_23b', error_list[23]),
+              checkboxInput('otherb', 'Other', value = FALSE),
+              uiOutput('ui_otherb'), 
+              checkboxInput('no_errors_arcb', 'No errors', value = FALSE),
+              uiOutput('ui_arc_endb') 
+            )
           )
-        )
+        }
       }
     }
   })
   
   output$ui_other <- renderUI({
-    message('---Setting up ui_other')
-    
-    pd <- input$other
-    if(!is.null(pd)){
-      if(pd){
-        textInput('other_text', 'Specify')
+    li <- logged_in()
+    if(li){
+      message('---Setting up ui_other')
+      
+      pd <- input$other
+      if(!is.null(pd)){
+        if(pd){
+          textInput('other_text', 'Specify')
+        }
       }
     }
   })
   
   output$ui_otherb <- renderUI({
-    message('---Setting up ui_otherb')
-    
-    pd <- input$otherb
-    if(!is.null(pd)){
-      if(pd){
-        textInput('other_textb', 'Specify')
+    li <- logged_in()
+    if(li){
+      message('---Setting up ui_otherb')
+      
+      pd <- input$otherb
+      if(!is.null(pd)){
+        if(pd){
+          textInput('other_textb', 'Specify')
+        }
       }
     }
   })
