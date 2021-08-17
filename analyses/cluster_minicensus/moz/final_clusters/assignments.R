@@ -645,7 +645,8 @@ if('larval_habitats_deliverable_1.csv' %in% dir()){
   water$description <- water$water_bodies_type
   water <- water %>%
     mutate(code = substr(hh_id, 1,3)) %>%
-    left_join(hh_level %>% dplyr::select(cluster, status, code))
+    left_join(hh_level %>% 
+                dplyr::select(cluster, status, code, hh_id))
   larval_habitats_deliverable_1 <- water %>%
     dplyr::select(hh_id,
                   cluster,
