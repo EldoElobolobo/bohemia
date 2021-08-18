@@ -33,16 +33,21 @@ There are two ways to load household locations:
 - On the device, open MAPS.ME
 - Click the star icon in the bottom
 - At the top of the page, click "SIGN IN"
+![](img/mapsme/30:5554_004.png)
+
 - Sign in as user "bohemiamalaria@gmail.com" with password "bohemiaproject"  
 - You will now have a list in your bookmarks named "Bohemia Agregados MOZ"
 
 **Method 2: retrieving files manually**
 
 - On the device, open a web browser (google chrome) and go to https://databrew.cc/moz.kml. This will initiate the download of a `kml` file.  
+![](img/mapsme/30:5554_001.png)
 - Once the file is downloaded, open it.
 - By default, the file should open in MAPS.ME; if it does not, manually override the opening so as to ensure that it opens with MAPS.ME.
 - Click the star icon in the bottom
 - Click "Bookmarks"
+
+
 
 
 ## Using MAPS.ME for navigation  
@@ -51,6 +56,9 @@ There are two ways to load household locations:
 - Click the star icon in the bottom
 - Click the list of households (named "Bohemia Agregados MOZ" if method 1; "Bookmarks" if method 2)  
 - You will now see a list of households. In the upper right, click the three dots to sort by name or distance
+
+![](img/mapsme/30:5554_005.png)
+
 - Click on one household to navigate there; alternatively...
 - Click the circular blue map icon in the bottom right. This will load all locations
 - Click on a location
