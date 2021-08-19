@@ -36,6 +36,8 @@ There are two ways to load household locations:
 ![](img/mapsme/30:5554_004.png)
 
 - Sign in as user "bohemiamalaria@gmail.com" with password "bohemiaproject"  
+- Click "Restore bookmarks" at the top of the screen  
+- A list will show up called "Bookmarks". Click on it.  
 - You will now have a list in your bookmarks named "Bohemia Agregados MOZ"
 
 **Method 2: retrieving files manually**
