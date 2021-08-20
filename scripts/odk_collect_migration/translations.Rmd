@@ -1,0 +1,86 @@
+---
+title: "Translations comparison"
+author: "www.databrew.cc"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    code_folding: hide
+  pdf_document: default
+---
+
+
+```{r setup, include=FALSE, echo = FALSE}
+# Basic knitr options
+library(knitr)
+opts_chunk$set(comment = NA, 
+               # echo = FALSE, 
+               warning = FALSE, 
+               message = FALSE, 
+               error = TRUE, 
+               cache = FALSE,
+               fig.width = 9.64,
+               fig.height = 5.9,
+               fig.path = 'figures/')
+```
+
+```{r}
+#!/usr/bin/Rscript
+start_time <- Sys.time()
+message('System time is: ', as.character(start_time))
+message('---Timezone: ', as.character(Sys.timezone()))
+library(gsheet)
+library(dplyr)
+url <- 'https://docs.google.com/spreadsheets/d/1Moyo2ri0E80NXiji0Q0FDSGZxEWbwpZzio_PIG5DATg/edit#gid=2073943561'
+survey <- gsheet::gsheet2tbl(url)
+
+sanitize <- function(df){
+  for(j in 1:ncol(df)){
+    var <-  gsub('$', 'VARIABLE:', as.character(unlist(df[,j])), fixed = TRUE)
+    var <- gsub('{', '', var, fixed = TRUE)
+    var <- gsub('}', '', var, fixed = TRUE)
+    df[,j] <- var
+
+  }
+  return(df)
+}
+
+questions <- survey %>% 
+  filter(!type %in% c('begin group', 'end group', 'calculate')) %>%
+  filter(!is.na(`label::English`)) %>%
+  dplyr::select(name, contains('label::')) %>%
+  sanitize()
+questions <- questions[,!grepl('Swahili', names(questions))]
+hints <- survey %>% 
+  filter(!type %in% c('begin group', 'end group', 'calculate')) %>%
+  filter(!is.na(`hint::English`)) %>%
+  dplyr::select(name, contains('hint::')) %>% sanitize()
+hints <- hints[,!grepl('Swahili', names(hints))]
+
+```
+
+## Questions
+
+```{r}
+knitr::kable(questions)
+```
+
+## Hints
+
+
+```{r}
+knitr::kable(hints)
+```
+
+## Responses
+
+```{r}
+url <- 'https://docs.google.com/spreadsheets/d/1Moyo2ri0E80NXiji0Q0FDSGZxEWbwpZzio_PIG5DATg/edit#gid=1602884187'
+choices <- gsheet::gsheet2tbl(url)
+responses <- choices %>% 
+  filter(!is.na(`label::English`)) %>%
+  dplyr::select(name, contains('label::')) %>% sanitize()
+choices <- hints[,!grepl('Swahili', names(choices))]
+
+knitr::kable(responses)
+
+```
