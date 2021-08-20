@@ -174,6 +174,9 @@ census_data <- bind_cols(census_data, locs_df)
 if(!dir.exists('mapsme_files')){
   dir.create('mapsme_files')
 }
+if(!dir.exists('mapsme_files/hamlets')){
+  dir.create('mapsme_files/hamlets')
+}
 mapsme <- census_data %>%
   dplyr::select(
     hh_id,
@@ -196,6 +199,18 @@ mapsme@data$Name <- paste0(mapsme@data$hh_id, ' (Cluster: ',
                            '). ',
                            ifelse(is.na(mapsme@data$cluster), '',
                                   mapsme@data$status))
+mapsme@data$longitude <- mapsme@data$lng
+mapsme@data$latitude <- mapsme@data$lat
 library(rgdal)
 writeOGR(mapsme["Name"], "mapsme_files/moz.kml", layer="hh_id", driver="KML") 
-write_csv(mapsme@data, 'mapsme_files/mapsme.csv')
+# write_csv(mapsme@data, 'mapsme_files/mapsme.csv')
+
+hamlets <- sort(unique(mapsme@data$hh_hamlet_code))
+for(i in 1:length(hamlets)){
+  this_code <- hamlets[i]
+  message(this_code)
+  this_data <- mapsme[mapsme@data$hh_hamlet_code == this_code,]
+  writeOGR(this_data["Name"], paste0("mapsme_files/hamlets/", this_code, ".kml"), layer=this_code, driver="KML") 
+  
+}
+
