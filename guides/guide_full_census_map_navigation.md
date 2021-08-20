@@ -42,7 +42,7 @@ There are two ways to load household locations:
 
 **Method 2: retrieving files manually**
 
-- On the device, open a web browser (google chrome) and go to https://databrew.cc/moz.kml. This will initiate the download of a `kml` file.  
+- On the device, open a web browser (google chrome) and go to http://databrew.cc/moz.kml. This will initiate the download of a `kml` file.  
 ![](img/mapsme/30:5554_001.png)
 - Once the file is downloaded, open it.
 - By default, the file should open in MAPS.ME; if it does not, manually override the opening so as to ensure that it opens with MAPS.ME.
