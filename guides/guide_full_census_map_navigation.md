@@ -26,21 +26,9 @@ In order to have meaningful background tiles during offline use, you'll need to 
 
 *Loading household locations*
 
-There are two ways to load household locations:
 
-**Method 1: logging into MAPS.ME**
 
-- On the device, open MAPS.ME
-- Click the star icon in the bottom
-- At the top of the page, click "SIGN IN"
-![](img/mapsme/30:5554_004.png)
-
-- Sign in as user "bohemiamalaria@gmail.com" with password "bohemiaproject"  
-- Click "Restore bookmarks" at the top of the screen  
-- A list will show up called "Bookmarks". Click on it.  
-- You will now have a list in your bookmarks named "Bohemia Agregados MOZ"
-
-**Method 2: retrieving files manually**
+**Tetrieving files manually**
 
 - On the device, open a web browser (google chrome) and go to http://databrew.cc/moz.kml. This will initiate the download of a `kml` file.  
 ![](img/mapsme/30:5554_001.png)
@@ -56,7 +44,7 @@ There are two ways to load household locations:
 
 - On the device, open MAPS.ME
 - Click the star icon in the bottom
-- Click the list of households (named "Bohemia Agregados MOZ" if method 1; "Bookmarks" if method 2)  
+- Click the list of households (Bookmarks) 
 - You will now see a list of households. In the upper right, click the three dots to sort by name or distance
 
 ![](img/mapsme/30:5554_005.png)
