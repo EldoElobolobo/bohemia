@@ -51,12 +51,19 @@ hh <-  minicensus_data$minicensus_main %>%
   left_join(locations, by = c('hamlet_id' = 'name_key'))
 # Get n_members and minicensus_roster
 people <- minicensus_data$minicensus_people %>%
+  mutate(sex = Hmisc::capitalize(gender)) %>%
+  mutate(dob = substr(minicensus_data$minicensus_people$dob, 1, 4)) %>%
   mutate(first_name = decrypt_private_data(first_name, keyfile = kf)) %>%
   mutate(last_name = decrypt_private_data(last_name, keyfile = kf)) %>%
-  mutate(full_name = paste0(first_name, ' ', last_name)) %>%
-  mutate(full_name_with_id = paste0(full_name, ' (',
-                                    pid,
-                                    ')'))
+  # mutate(full_name = paste0(first_name, ' ', last_name)) %>%
+  # mutate(full_name_with_id = paste0(full_name, ' (',
+  #                                   pid,
+  #                                   ')')) %>%
+  mutate(full_name = paste0(first_name, ';', last_name)) %>%
+  mutate(full_name_with_id = paste0(full_name, '|ID:', pid, '|',
+                                    sex, '|', dob)) %>%
+  mutate(name_key = gsub(' ', '.', full_name_with_id, fixed = TRUE))
+
 right <- people %>%
   group_by(instance_id) %>%
   summarise(n_members = n(),
@@ -64,6 +71,9 @@ right <- people %>%
 hh <- left_join(hh, right)
 hh <- hh %>% dplyr::select(-instance_id)
 households_data <- hh
+households_data <- households_data %>%
+  arrange(hamlet_id, household_id) %>%
+  filter(!duplicated(household_id))
 
 # people data
 #   household_id person_id   sex    first_name   dob last_name full_name        full_name_with_id    
@@ -76,9 +86,12 @@ people_data <- people %>%
                 dob,
                 last_name,
                 full_name,
-                full_name_with_id)
-people_data$sex <- Hmisc::capitalize(people_data$sex)
-
+                full_name_with_id,
+                name_key)
+people_data$dob <- as.numeric(people_data$dob)
+people_data <- people_data %>%
+  arrange(person_id) %>%
+  filter(!duplicated(person_id))
 
 # Get searcher of full roster
 full_roster <- people_data %>%

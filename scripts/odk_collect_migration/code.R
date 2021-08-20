@@ -34,7 +34,10 @@ households_data <-
               dplyr::select(hamlet_id,
                             country, region, district,
                             ward, village, hamlet)) %>%
-  arrange(hamlet_id)
+  arrange(hamlet_id) %>%
+  arrange(hamlet_id, household_id) %>%
+  filter(!duplicated(household_id))
+
 
 # Get the person-level data
 people_list <- list()
@@ -51,6 +54,11 @@ for(i in 1:nrow(households_data)){
 }
 people_data <- bind_rows(people_list)
 people_data$sex <- ifelse(people_data$sex, 'Male', 'Female')
+people_data$sex <- ifelse(is.na(people_data$sex), 'Female', people_data$sex)
+people_data <- people_data %>%
+  arrange(person_id) %>%
+  filter(!duplicated(person_id))
+
 
 # Add a field to households data which is minicensus roster
 minicensus_roster <- people_data %>%
@@ -64,13 +72,15 @@ households_data <- left_join(households_data,
 
 # Modify names
 people_data <- people_data %>%
-  mutate(full_name = paste0(first_name, ' ', last_name)) %>%
-  mutate(full_name_with_id = paste0(full_name, ' (', person_id, ')'))
+  mutate(full_name = paste0(first_name, ';', last_name)) %>%
+  mutate(full_name_with_id = paste0(full_name, '|ID:', person_id, '|',
+                                    sex, '|', dob)) %>%
+  mutate(name_key = gsub(' ', '.', full_name_with_id, fixed = TRUE))
 
 # Get searcher of full roster
 full_roster <- people_data %>%
   mutate(list_name = 'full_roster') %>%
-  mutate(name_key = person_id,
+  mutate(#name_key = person_id,
          label = full_name_with_id) %>%
   dplyr::select(list_name, name_key, label)
 
@@ -88,6 +98,7 @@ write_csv(full_roster, 'full_roster.csv')
 # households_data <- read_csv('households_data.csv')
 # locations_data <- read_csv('locations_data.csv')
 # people_data <- read_csv('people_data.csv')
+# full_roster <- read_csv('full_roster.csv')
 
 zip(zipfile = '../metadata.zip',
     files = c('locations_data.csv',
