@@ -91,6 +91,7 @@ people_data <- people %>%
 people_data$dob <- as.numeric(people_data$dob)
 people_data <- people_data %>%
   arrange(person_id) %>%
+  filter(!last_name == 'Brew') %>%
   filter(!duplicated(person_id))
 
 # Get searcher of full roster
