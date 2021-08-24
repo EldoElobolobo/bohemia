@@ -75,12 +75,14 @@ app_ui <- function(request) {
                        )
                 ),
                 column(4,
-                       div(class = 'tableCard',
-                           h3('Physician inputs'),
-                           uiOutput('ui_select_va'),
-                           uiOutput('ui_assign_cod'),
-                           uiOutput('ui_submission')
-                       )
+                         div(class = 'tableCard',
+                             h3('Physician inputs'),
+                             uiOutput('ui_select_va'),
+                             uiOutput('ui_assign_cod'),
+                             uiOutput('ui_submission')
+                         )
+                       
+                     
                 )
               )
             )
@@ -230,7 +232,10 @@ app_server <- function(input, output, session) {
     }
     if(!is.null(out)){
       if(is.data.frame(out)){
-        out
+        DT::datatable(out, rownames = FALSE, options = list(
+          columnDefs = list(list(className= 'dt-left',width = '0.5px', targets = 1))
+        ))
+        
       }
     }
   })
@@ -259,7 +264,9 @@ app_server <- function(input, output, session) {
     }
     if(!is.null(out)){
       if(is.data.frame(out)){
-        out
+        DT::datatable(out, rownames = FALSE, options = list(
+          columnDefs = list(list(className= 'dt-left',width = '30px', targets = c(0,1,2,3)))
+        ))
       }
     }
   })
@@ -767,7 +774,8 @@ app_server <- function(input, output, session) {
       }
       if(!is.null(out)){
         if(is.data.frame(out)){
-          DT::datatable(out, extensions = 'Buttons', options = list(dom = 'Bfrtip',
+          DT::datatable(out, extensions = 'Buttons', options = list(scrollY = '350px',
+                                                                    dom = 'Bfrtip',
                                                                     pageLength = nrow(out),
                                                                     buttons = list(
                                                                       list(extend = 'copy'),
@@ -826,7 +834,7 @@ app_server <- function(input, output, session) {
     cod_3 = input$cod_3
     # save(cod_data, pn, cod_1, cod_2, cod_3,cod_names, file = 'temp_cods.rda')
     # condition if underlying cause of death is not fiilled out, wont submit
-    if(cod_1==''){
+    if(cod_3==''){
       submission_success(FALSE)
     } else {
       death_id = input$death_id
