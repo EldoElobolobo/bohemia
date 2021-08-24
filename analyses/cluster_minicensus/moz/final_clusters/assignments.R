@@ -657,104 +657,109 @@ if('larval_habitats_deliverable_1.csv' %in% dir()){
 }
 
 
-# LIVESTOCK ENCLSORUES
-# 1 point for every household reporting a livestock enclosure, as per minicensus. questions 19a and 19b in minicensus
-# livestock <- pd_moz$minicensus_main %>%
-#   mutate(hamlet_code = substr(hh_id, 1, 3)) %>%
-#   dplyr::select(instance_id,
-#                 hamlet_code,
-#                 wid,
-#                 hh_id,
-#                 hh_geo_location,
-#                 # Cattle
-#                 hh_animals_distance_cattle_dry_season,
-#                 hh_animals_distance_cattle_rainy_season,
-#                 hh_animals_where_cattle_dry_season,
-#                 hh_animals_where_cattle_rainy_season,
-#                 # Pigs
-#                 hh_animals_dry_season_distance_pigs, 
-#                 hh_animals_rainy_season_distance_pigs,
-#                 hh_animals_rainy_season_pigs,
-#                 hh_animals_dry_season_pigs)
-# locs <- extract_ll(livestock$hh_geo_location)
-# livestock <- bind_cols(livestock, locs)
-# livestock <- livestock %>%
-#   filter(!is.na(hh_animals_rainy_season_pigs) |
-#            !is.na(hh_animals_dry_season_pigs) |
-#            !is.na(hh_animals_where_cattle_dry_season) |
-#            !is.na(hh_animals_where_cattle_rainy_season)) %>%
-#   mutate(description = 
-#            paste0(
-#              ifelse(!is.na(hh_animals_dry_season_pigs),
-#                     paste0('Pigs in dry season: ', hh_animals_dry_season_pigs, '. '),
-#                     ''),
-#              ifelse(!is.na(hh_animals_rainy_season_pigs),
-#                            paste0('Pigs in rainy season: ', hh_animals_dry_season_pigs, '. '),
-#                            ''),
-#              ifelse(!is.na(hh_animals_where_cattle_rainy_season),
-#                     paste0('Cattle in rainy season: ', hh_animals_where_cattle_rainy_season, '. '),
-#                     ''),
-#              ifelse(!is.na(hh_animals_where_cattle_dry_season),
-#                     paste0('Cattle in dry season: ', hh_animals_where_cattle_dry_season, '. '),
-#                     '')
-#            ))
-
-livestock <- cdc_light_trap_livestock_enclosures_clusters_all_hh
-# Combine the livestock and water
-livestock <- livestock %>%
-  dplyr::select(hh_id,
-                description,
-                hamlet_code,
-                wid,
-                lng,
-                lat) %>%
-  mutate(type = 'Livestock enclosure')
-water <- water %>%
-  dplyr::select(description,
-                hamlet_code,
-                wid,
-                hh_id,
-                lng,
-                lat) %>%
-  mutate(type = 'Body of water')
-households <- 
-  sentinel_cdc_light_trap_only_6 %>%
-  mutate(month_number = 'not applicable (sentinel)') %>%
-  dplyr::select(hh_id,
-                lng,
-                lat,
-                month_number,
-                randomization_number) %>%
-  mutate(type = 'Household: Sentinel CDC light trap') %>%
-  bind_rows(
-    random_cdc_light_trap_households_only_4 %>%
-      mutate(month_number = as.character(month_number)) %>%
-      dplyr::select(hh_id,
-                    lng,
-                    lat,
-                    month_number,
-                    randomization_number) %>%
-      mutate(type = 'Household: Random CDC light trap') 
-  )
-
-
-
-
-# Write locations files
-write_kml <- function(df, file_path,
-                      layer){
-  require(sp)
-  require(rgdal)
-  df <- df %>% filter(!is.na(lng),
-                      !is.na(lat))
-  coordinates(df) <- ~lng+lat
-  proj4string(df) <- CRS("+proj=longlat +datum=WGS84")
-  writeOGR(df, file_path, layer=layer, driver="KML") 
+keep_going <- FALSE
+if(keep_going){
+  
+  # LIVESTOCK ENCLSORUES
+  # 1 point for every household reporting a livestock enclosure, as per minicensus. questions 19a and 19b in minicensus
+  # livestock <- pd_moz$minicensus_main %>%
+  #   mutate(hamlet_code = substr(hh_id, 1, 3)) %>%
+  #   dplyr::select(instance_id,
+  #                 hamlet_code,
+  #                 wid,
+  #                 hh_id,
+  #                 hh_geo_location,
+  #                 # Cattle
+  #                 hh_animals_distance_cattle_dry_season,
+  #                 hh_animals_distance_cattle_rainy_season,
+  #                 hh_animals_where_cattle_dry_season,
+  #                 hh_animals_where_cattle_rainy_season,
+  #                 # Pigs
+  #                 hh_animals_dry_season_distance_pigs, 
+  #                 hh_animals_rainy_season_distance_pigs,
+  #                 hh_animals_rainy_season_pigs,
+  #                 hh_animals_dry_season_pigs)
+  # locs <- extract_ll(livestock$hh_geo_location)
+  # livestock <- bind_cols(livestock, locs)
+  # livestock <- livestock %>%
+  #   filter(!is.na(hh_animals_rainy_season_pigs) |
+  #            !is.na(hh_animals_dry_season_pigs) |
+  #            !is.na(hh_animals_where_cattle_dry_season) |
+  #            !is.na(hh_animals_where_cattle_rainy_season)) %>%
+  #   mutate(description = 
+  #            paste0(
+  #              ifelse(!is.na(hh_animals_dry_season_pigs),
+  #                     paste0('Pigs in dry season: ', hh_animals_dry_season_pigs, '. '),
+  #                     ''),
+  #              ifelse(!is.na(hh_animals_rainy_season_pigs),
+  #                            paste0('Pigs in rainy season: ', hh_animals_dry_season_pigs, '. '),
+  #                            ''),
+  #              ifelse(!is.na(hh_animals_where_cattle_rainy_season),
+  #                     paste0('Cattle in rainy season: ', hh_animals_where_cattle_rainy_season, '. '),
+  #                     ''),
+  #              ifelse(!is.na(hh_animals_where_cattle_dry_season),
+  #                     paste0('Cattle in dry season: ', hh_animals_where_cattle_dry_season, '. '),
+  #                     '')
+  #            ))
+  
+  livestock <- cdc_light_trap_livestock_enclosures_clusters_all_hh
+  # Combine the livestock and water
+  livestock <- livestock %>%
+    dplyr::select(hh_id,
+                  description,
+                  hamlet_code,
+                  wid,
+                  lng,
+                  lat) %>%
+    mutate(type = 'Livestock enclosure')
+  water <- water %>%
+    dplyr::select(description,
+                  hamlet_code,
+                  wid,
+                  hh_id,
+                  lng,
+                  lat) %>%
+    mutate(type = 'Body of water')
+  households <- 
+    sentinel_cdc_light_trap_only_6 %>%
+    mutate(month_number = 'not applicable (sentinel)') %>%
+    dplyr::select(hh_id,
+                  lng,
+                  lat,
+                  month_number,
+                  randomization_number) %>%
+    mutate(type = 'Household: Sentinel CDC light trap') %>%
+    bind_rows(
+      random_cdc_light_trap_households_only_4 %>%
+        mutate(month_number = as.character(month_number)) %>%
+        dplyr::select(hh_id,
+                      lng,
+                      lat,
+                      month_number,
+                      randomization_number) %>%
+        mutate(type = 'Household: Random CDC light trap') 
+    )
+  
+  
+  
+  
+  # Write locations files
+  write_kml <- function(df, file_path,
+                        layer){
+    require(sp)
+    require(rgdal)
+    df <- df %>% filter(!is.na(lng),
+                        !is.na(lat))
+    coordinates(df) <- ~lng+lat
+    proj4string(df) <- CRS("+proj=longlat +datum=WGS84")
+    writeOGR(df, file_path, layer=layer, driver="KML") 
+  }
+  # write_kml(df = livestock,
+  #           file_path = 'geographic_files/livestock.kml',
+  #           layer = 'livestock')
+  write_csv(livestock, 'geographic_files/livestock.csv')
+  write_csv(households, 'geographic_files/households.csv')
+  write_csv(water, 'geographic_files/water.csv')
+  # These are manually converted to kmls at https://www.google.com/maps/d/u/0/
+  
 }
-# write_kml(df = livestock,
-#           file_path = 'geographic_files/livestock.kml',
-#           layer = 'livestock')
-write_csv(livestock, 'geographic_files/livestock.csv')
-write_csv(households, 'geographic_files/households.csv')
-write_csv(water, 'geographic_files/water.csv')
-# These are manually converted to kmls at https://www.google.com/maps/d/u/0/

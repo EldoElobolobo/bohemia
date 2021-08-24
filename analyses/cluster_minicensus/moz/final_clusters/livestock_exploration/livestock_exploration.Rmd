@@ -1,0 +1,345 @@
+---
+title: "Livestock enclosure ad-hoc exploration"
+author: "www.databrew.cc"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    code_folding: hide
+    df_print: kable
+  pdf_document: default
+---
+
+
+```{r setup, include=FALSE, echo = FALSE}
+# Basic knitr options
+library(knitr)
+opts_chunk$set(comment = NA, 
+               # echo = FALSE, 
+               warning = FALSE, 
+               message = FALSE, 
+               error = TRUE, 
+               cache = FALSE,
+               fig.width = 9.64,
+               fig.height = 5.9,
+               fig.path = 'figures/')
+```
+
+```{r}
+#!/usr/bin/Rscript
+start_time <- Sys.time()
+message('System time is: ', as.character(start_time))
+message('---Timezone: ', as.character(Sys.timezone()))
+owd <- getwd()
+setwd('..')
+source('assignments.R')
+setwd(owd)
+```
+
+This is an ad-hoc analysis done for informative purposes with a turn-around of < 24 hours. It has not undergone code review.
+
+# How many houses geocoded livestock enclosures?
+
+```{r}
+df <- pd_moz$minicensus_main
+
+print_stuff <- function(variable = 'hh_animals_distance_cattle_rainy_season_geo',
+                        label = 'Question 20. If cattle are housed at night somewhere other than "inside the house where humans sleep", at what distance from the nearest structure where people are sleeping do cattle sleep?... 20a. During the rainy season'){
+  pd <- df
+  pd$var <- pd[,variable]
+  out <- pd %>%
+    mutate(has_geocode = ifelse(is.na(var), 'No geocode', 'Geocode')) %>%
+    group_by(`Status_____` = has_geocode) %>%
+    tally %>%
+    mutate(p = round(n / sum(n) * 100, digits = 2)) %>%
+    dplyr::rename(`HH______` = n,
+                  `______%` = p)
+  cat('\n')
+  cat(label)
+  cat('\n\n')
+  cat('**In entire minicensus (for Mozambique):**\n\n')
+  x = 2+2
+  knitr::kable(out, format = 'html')
+  cat('\n\n')
+  
+  cat('**In 15 sentinel clusters:**\n\n')
+  out <- pd %>%
+    left_join(hh_level) %>%
+    filter(!is.na(cluster)) %>%
+    filter(cluster %in% ento_sentinel_clusters$cluster) %>%
+    mutate(has_geocode = ifelse(is.na(var), 'No geocode', 'Geocode')) %>%
+    group_by(`Status_____` = has_geocode) %>%
+    tally %>%
+    mutate(p = round(n / sum(n) * 100, digits = 2)) %>%
+    dplyr::rename(`HH______` = n,
+                  `______%` = p)
+    cat('\n\n')
+    knitr::kable(out, format = 'html')
+}
+```
+
+## Cattle
+
+```{r}
+
+print_stuff(variable = 'hh_animals_distance_cattle_rainy_season_geo',
+                        label = 'Question 20. If cattle are housed at night somewhere other than "inside the house where humans sleep", at what distance from the nearest structure where people are sleeping do cattle sleep?... 20a. During the rainy season')
+
+print_stuff(variable = 'hh_animals_distance_cattle_dry_season_geo',
+                        label = 'Question 20. If cattle are housed at night somewhere other than "inside the house where humans sleep", at what distance from the nearest structure where people are sleeping do cattle sleep?... 20b. During the dry season')
+```
+
+## Pigs
+
+```{r}
+print_stuff(variable = 'hh_animals_rainy_season_geo_pigs',
+                        label = 'Question 20. If pigs are housed at night somewhere other than "inside the house where humans sleep", at what distance from the nearest structure where people are sleeping do cattle sleep?... 20a. During the rainy season')
+
+print_stuff(variable = 'hh_animals_dry_season_geo_pigs',
+                        label = 'Question 20. If pigs are housed at night somewhere other than "inside the house where humans sleep", at what distance from the nearest structure where people are sleeping do cattle sleep?... 20b. During the rainy season')
+```
+
+
+
+# Breakdown of animal ownership among households in 15 sentinel clusters
+
+```{r}
+#                   Cattle
+  #                 hh_animals_distance_cattle_dry_season,
+  #                 hh_animals_distance_cattle_rainy_season,
+  #                 hh_animals_where_cattle_dry_season,
+  #                 hh_animals_where_cattle_rainy_season,
+  #                 # Pigs
+  #                 hh_animals_dry_season_distance_pigs, 
+  #                 hh_animals_rainy_season_distance_pigs,
+  #                 hh_animals_rainy_season_pigs,
+  #                 hh_animals_dry_season_pigs
+tabulate_var <- function(variable = 'hh_animals_distance_cattle_dry_season',
+                     label = 'Question 19. Where are the cattle housed at night? 19a. During the rainy season?'){
+  pd <- df
+  pd$var <- pd[,variable]
+  out <- pd %>%
+    left_join(hh_level) %>%
+    filter(!is.na(cluster)) %>%
+    filter(cluster %in% ento_sentinel_clusters$cluster) %>%
+    group_by(`Response_____` = var) %>%
+    tally %>%
+    mutate(p = round(n / sum(n) * 100, digits = 2)) %>%
+    dplyr::rename(`HH________` = n,
+                  `______%` = p)
+  cat('\n\n')
+  cat(label)
+  cat('\n\n')
+  knitr::kable(out, format = 'html')
+}
+```
+
+## Cattle
+
+```{r}
+tabulate_var(variable = 'hh_animals_where_cattle_rainy_season',
+                     label = 'Question 19. Where are the cattle housed at night? 19b. During the dry season?')
+
+tabulate_var(variable = 'hh_animals_where_cattle_dry_season',
+                     label = 'Question 19. Where are the cattle housed at night? 19a. During the rainy season?')
+
+tabulate_var(variable = 'hh_animals_distance_cattle_rainy_season',
+                     label = 'Question 20. If cattle are housed at night somewhere other than "inside the house where humans sleep", at what distance from the nearest structure where people are sleeping do cattle sleep? 20a. During rainy season')
+
+
+tabulate_var(variable = 'hh_animals_distance_cattle_dry_season',
+                     label = 'Question 20. If cattle are housed at night somewhere other than "inside the house where humans sleep", at what distance from the nearest structure where people are sleeping do cattle sleep? 20a. During dry season')
+```
+
+## Pigs
+
+```{r}
+
+### PIGS
+
+tabulate_var(variable = 'hh_animals_rainy_season_pigs',
+                     label = 'Question 19. Where are the pigs housed at night? 19b. During the dry season?')
+
+tabulate_var(variable = 'hh_animals_dry_season_pigs',
+                     label = 'Question 19. Where are the pigs housed at night? 19a. During the rainy season?')
+
+tabulate_var(variable = 'hh_animals_dry_season_distance_pigs',
+                     label = 'Question 20. If pigs are housed at night somewhere other than "inside the house where humans sleep", at what distance from the nearest structure where people are sleeping do pigs sleep? 20a. During rainy season')
+
+
+tabulate_var(variable = 'hh_animals_rainy_season_distance_pigs',
+                     label = 'Question 20. If pigs are housed at night somewhere other than "inside the house where humans sleep", at what distance from the nearest structure where people are sleeping do pigs sleep? 20a. During dry season')
+```
+
+
+# Proposal for new "variable" for filtering households considered to have livestock enclosures
+
+Definition of variables:
+
+- `has_cattle` = 
+  - `Question 19. Where are the cattle housed at night? 19b. During the dry season?` OR `Question 19. Where are the cattle housed at night? 19a. During the rainy season?` must equal:
+    - "Inside an animal structure and within 15 meters from the house" OR
+    - "Inside an animal structure inside the compound but > 15 meters from the house" OR
+    - "Inside the compound but not inside a structure, within 15 meters from the house" OR
+  - `Question 20. If cattle are housed at night somewhere other than "inside the house where humans sleep", at what distance from the nearest structure where people are sleeping do cattle sleep? 20a. During rainy season` OR `Question 20. If cattle are housed at night somewhere other than "inside the house where humans sleep", at what distance from the nearest structure where people are sleeping do cattle sleep? 20a. During dry season` must equal:
+    - "<10m" OR
+    - "10-50m" OR
+    - "50-100m" OR
+  - Geocoding has been carried out for any livestock location.
+
+
+
+- `has_pigs` = 
+  - `Question 19. Where are the pigs housed at night? 19b. During the dry season?` OR `Question 19. Where are pigs cattle housed at night? 19a. During the rainy season?` must equal:
+    - "Inside an animal structure and within 15 meters from the house" OR
+    - "Inside an animal structure inside the compound but > 15 meters from the house" OR
+    - "Inside the compound but not inside a structure, within 15 meters from the house" OR
+  - `Question 20. If pigs are housed at night somewhere other than "inside the house where humans sleep", at what distance from the nearest structure where people are sleeping do pigs sleep? 20a. During rainy season` OR `Question 20. If pigs are housed at night somewhere other than "inside the house where humans sleep", at what distance from the nearest structure where people are pigs do cattle sleep? 20a. During dry season` must equal:
+    - "<10m" OR
+    - "10-50m" OR
+    - "50-100m" OR
+  - Geocoding has been carried out for any livestock location.
+
+- `has_animals` = `has_pigs` OR `has_cows`
+
+
+
+```{r, echo = TRUE}
+pd <- df %>%
+    left_join(hh_level) %>%
+    filter(!is.na(cluster)) %>%
+    filter(cluster %in% ento_sentinel_clusters$cluster)
+
+accept_vec <- c("Inside an animal structure and within 15 meters from the house",
+    "Inside an animal structure inside the compound but > 15 meters from the house",
+    "Inside the compound but not inside a structure, within 15 meters from the house")
+accept_distance_vec <- c('<10m', '10-50m', '50-100m')
+pd$has_cattle <-
+  pd$hh_animals_where_cattle_rainy_season %in% accept_vec |
+  pd$hh_animals_where_cattle_dry_season %in% accept_vec |
+  pd$hh_animals_distance_cattle_rainy_season %in% accept_distance_vec |
+  pd$hh_animals_distance_cattle_dry_season %in% accept_distance_vec |
+  !is.na(pd$hh_animals_distance_cattle_rainy_season_geo) |
+  !is.na(pd$hh_animals_distance_cattle_dry_season_geo)
+  
+pd$has_pigs <- 
+  pd$hh_animals_rainy_season_pigs %in% accept_vec |
+  pd$hh_animals_dry_season_pigs %in% accept_vec |
+  pd$hh_animals_rainy_season_distance_pigs %in% accept_distance_vec |
+  pd$hh_animals_dry_season_distance_pigs %in% accept_distance_vec |
+  !is.na(pd$hh_animals_rainy_season_geo_pigs) |
+  !is.na(pd$hh_animals_dry_season_geo_pigs)
+
+pd$has_animals <- pd$has_cattle | pd$has_pigs
+```
+
+
+# Summary of new variables per cluster (among 15 sentinel clusters only)
+
+
+## Among all households in sentinel clusters
+
+### Cattle
+
+```{r}
+make_yn <- function(x){ifelse(x, 'Yes', 'No')}
+
+out <- pd %>%
+  mutate(has_cattle = make_yn(has_cattle)) %>%
+  group_by(`Has cattle` = has_cattle) %>%
+  tally
+out
+```
+
+### Pigs
+
+```{r}
+out <- pd %>%
+  mutate(has_pigs = make_yn(has_pigs)) %>%
+  group_by(`Has pigs` = has_pigs) %>%
+  tally
+out
+```
+
+### Animals
+
+```{r}
+out <- pd %>%
+  mutate(has_animals = make_yn(has_animals)) %>%
+  group_by(`Has animals` = has_animals) %>%
+  tally
+out
+```
+
+## By sentinel cluster
+
+### Cattle
+
+```{r}
+out <- pd %>%
+  mutate(has_cattle = make_yn(has_cattle)) %>%
+  group_by(Cluster = cluster, 
+           `Has cattle` = has_cattle) %>%
+  tally %>%
+  ungroup %>%
+  tidyr::spread(key = `Has cattle`, value = n, fill = 0)
+out
+```
+
+### Pigs
+
+```{r}
+out <- pd %>%
+  mutate(has_pigs = make_yn(has_pigs)) %>%
+  group_by(Cluster = cluster, 
+           `Has pigs` = has_pigs) %>%
+  tally %>%
+  ungroup %>%
+  tidyr::spread(key = `Has pigs`, value = n, fill = 0)
+out
+```
+
+
+### Animals
+
+```{r}
+out <- pd %>%
+  mutate(has_animals = make_yn(has_animals)) %>%
+  group_by(Cluster = cluster, 
+           `Has animals` = has_animals) %>%
+  tally %>%
+  ungroup %>%
+  tidyr::spread(key = `Has animals`, value = n, fill = 0)
+out
+```
+
+
+```{r, eval = FALSE}
+## Ad-hoc investigation of already visited households
+
+keep_vars <- c(
+  'hh_id',
+  'hh_animals_where_cattle_rainy_season',
+  'hh_animals_where_cattle_dry_season',
+  'hh_animals_distance_cattle_rainy_season',
+  'hh_animals_distance_cattle_dry_season',
+  'hh_animals_distance_cattle_rainy_season_geo',
+  'hh_animals_distance_cattle_dry_season_geo',
+  'hh_animals_rainy_season_pigs',
+  'hh_animals_dry_season_pigs',
+  'hh_animals_rainy_season_distance_pigs',
+  'hh_animals_dry_season_distance_pigs',
+  'hh_animals_rainy_season_geo_pigs',
+  'hh_animals_dry_season_geo_pigs',
+  'has_cattle',
+  'has_pigs',
+  'has_animals')
+
+out <- pd[,keep_vars] %>%
+  filter(hh_id %in% c(
+    paste0('CIM-', '208', '077', '039', '029', '315'),
+    'ZVA-072', 'DEA-045'
+  ))
+  
+```
+
+
