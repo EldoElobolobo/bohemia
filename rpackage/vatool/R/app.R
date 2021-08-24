@@ -194,6 +194,8 @@ app_server <- function(input, output, session) {
       
       # load data
       data$va <- load_va_data(is_local = is_local)
+      # temp <- data$va
+      # save(temp, file = 'va_Test.rda')
       # data$va <- readRDS('~/Desktop/va_data.rda')
 
       # print(head(data$va))
@@ -243,32 +245,52 @@ app_server <- function(input, output, session) {
   # # Summary table 2
   output$summary_2 <- DT::renderDataTable({
     li <- logged_in()
+    co <- input$country
     out <- NULL
     if(li){
       pd <- data$va
-      pd <- pd %>% group_by(country = server) %>%
+      pd_sub <- pd %>% group_by(country = server) %>%
         summarise(`Total VAs` = n()) %>%
         mutate(country = ifelse(grepl('ihi', country), 'Tanzania', 'Mozambique'))
       
       temp_cods <- table_cods$data
+      # save(pd,pd_sub, users,temp_cods, file = 'va_summary.rda')
       
-      out <- left_join(users, temp_cods) %>%
-        group_by(country) %>%
+      out <- inner_join(pd, temp_cods, by = 'death_id') %>%
+        group_by(country = server) %>%
+        mutate(country = ifelse(grepl('ihi', country), 'Tanzania', 'Mozambique')) %>%
         summarise(`Number of VAs coded` = length(which(!is.na(time_stamp)))) %>% 
-        inner_join(pd)
-      # save(out, file = 'temp_out.rda')
-      out$`Weekly Target`<- ifelse(out$country == 'Mozambique', 59, 100)
-      # add in target
-      out <- out %>% select(Country = country,`Number of VAs coded`,`Weekly Target`,  `Total VAs`)
-      
-    }
-    if(!is.null(out)){
-      if(is.data.frame(out)){
-        DT::datatable(out, rownames = FALSE, options = list(
-          columnDefs = list(list(className= 'dt-left',width = '30px', targets = c(0,1,2,3)))
-        ))
+        inner_join(pd_sub)
+      if(co == 'Mozambique'){
+        # out$`Weekly Target`<- ifelse(out$country == 'Mozambique', 59, 100)
+        out$`Slot 1 % complete` <- round((out$`Number of VAs coded`/199)*100,2)
+        out$`Slot 2 % complete` <- round((out$`Number of VAs coded`/253)*100,2)
+        out$`Slot 3 % complete` <- round((out$`Number of VAs coded`/253)*100,2)
+        out$`Total % complete` <- round((out$`Number of VAs coded`/out$`Total VAs`)*100)
+        # add in target
+        out <- out %>% select(Country = country,`Number of VAs coded`,`Slot 1 % complete`,`Slot 2 % complete`, `Slot 3 % complete` , `Total VAs`,`Total % complete`)
+        if(!is.null(out)){
+          if(is.data.frame(out)){
+            DT::datatable(out, rownames = FALSE, options = list(
+              columnDefs = list(list(className= 'dt-left',width = '30px', targets = c(0,1,2,3,4,5,6)))
+            ))
+          }
+        }
+      } else {
+        # save(out, file = 'temp_out.rda')
+        out$`Weekly Target`<- ifelse(out$country == 'Mozambique', 59, 100)
+        # add in target
+        out <- out %>% select(Country = country,`Number of VAs coded`,`Weekly Target`,  `Total VAs`)
+        if(!is.null(out)){
+          if(is.data.frame(out)){
+            DT::datatable(out, rownames = FALSE, options = list(
+              columnDefs = list(list(className= 'dt-left',width = '30px', targets = c(0,1,2,3)))
+            ))
+          }
+        }
       }
     }
+    
   })
   
   # UNRESOLVED VAS
