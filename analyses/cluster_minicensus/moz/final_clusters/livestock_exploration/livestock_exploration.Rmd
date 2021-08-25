@@ -180,11 +180,13 @@ Definition of variables:
     - "Inside an animal structure and within 15 meters from the house" OR
     - "Inside an animal structure inside the compound but > 15 meters from the house" OR
     - "Inside the compound but not inside a structure, within 15 meters from the house" OR
+    - "Inside the compound but not inside a structure, but more than 15 meters from the house" OR
+    - "Just outside the compound" OR
   - `Question 20. If cattle are housed at night somewhere other than "inside the house where humans sleep", at what distance from the nearest structure where people are sleeping do cattle sleep? 20a. During rainy season` OR `Question 20. If cattle are housed at night somewhere other than "inside the house where humans sleep", at what distance from the nearest structure where people are sleeping do cattle sleep? 20a. During dry season` must equal:
     - "<10m" OR
     - "10-50m" OR
     - "50-100m" OR
-  - Geocoding has been carried out for any livestock location.
+  - ~~Geocoding has been carried out for any livestock location.~~
 
 
 
@@ -193,11 +195,13 @@ Definition of variables:
     - "Inside an animal structure and within 15 meters from the house" OR
     - "Inside an animal structure inside the compound but > 15 meters from the house" OR
     - "Inside the compound but not inside a structure, within 15 meters from the house" OR
+    - "Inside the compound but not inside a structure, but more than 15 meters from the house" OR
+    - "Just outside the compound" OR
   - `Question 20. If pigs are housed at night somewhere other than "inside the house where humans sleep", at what distance from the nearest structure where people are sleeping do pigs sleep? 20a. During rainy season` OR `Question 20. If pigs are housed at night somewhere other than "inside the house where humans sleep", at what distance from the nearest structure where people are pigs do cattle sleep? 20a. During dry season` must equal:
     - "<10m" OR
     - "10-50m" OR
     - "50-100m" OR
-  - Geocoding has been carried out for any livestock location.
+  - ~~Geocoding has been carried out for any livestock location.~~
 
 - `has_animals` = `has_pigs` OR `has_cows`
 
@@ -211,23 +215,25 @@ pd <- df %>%
 
 accept_vec <- c("Inside an animal structure and within 15 meters from the house",
     "Inside an animal structure inside the compound but > 15 meters from the house",
-    "Inside the compound but not inside a structure, within 15 meters from the house")
+    "Inside the compound but not inside a structure, within 15 meters from the house",
+    "Inside the compound but not inside a structure, but more than 15 meters from the house",
+    "Just outside the compound")
 accept_distance_vec <- c('<10m', '10-50m', '50-100m')
 pd$has_cattle <-
   pd$hh_animals_where_cattle_rainy_season %in% accept_vec |
   pd$hh_animals_where_cattle_dry_season %in% accept_vec |
   pd$hh_animals_distance_cattle_rainy_season %in% accept_distance_vec |
-  pd$hh_animals_distance_cattle_dry_season %in% accept_distance_vec |
-  !is.na(pd$hh_animals_distance_cattle_rainy_season_geo) |
-  !is.na(pd$hh_animals_distance_cattle_dry_season_geo)
+  pd$hh_animals_distance_cattle_dry_season %in% accept_distance_vec #|
+  # !is.na(pd$hh_animals_distance_cattle_rainy_season_geo) |
+  # !is.na(pd$hh_animals_distance_cattle_dry_season_geo)
   
 pd$has_pigs <- 
   pd$hh_animals_rainy_season_pigs %in% accept_vec |
   pd$hh_animals_dry_season_pigs %in% accept_vec |
   pd$hh_animals_rainy_season_distance_pigs %in% accept_distance_vec |
-  pd$hh_animals_dry_season_distance_pigs %in% accept_distance_vec |
-  !is.na(pd$hh_animals_rainy_season_geo_pigs) |
-  !is.na(pd$hh_animals_dry_season_geo_pigs)
+  pd$hh_animals_dry_season_distance_pigs %in% accept_distance_vec #|
+  # !is.na(pd$hh_animals_rainy_season_geo_pigs) |
+  # !is.na(pd$hh_animals_dry_season_geo_pigs)
 
 pd$has_animals <- pd$has_cattle | pd$has_pigs
 ```
@@ -336,7 +342,7 @@ keep_vars <- c(
 
 out <- pd[,keep_vars] %>%
   filter(hh_id %in% c(
-    paste0('CIM-', '208', '077', '039', '029', '315'),
+    paste0('CIM-', c('208', '077', '039', '029', '315')),
     'ZVA-072', 'DEA-045'
   ))
   
