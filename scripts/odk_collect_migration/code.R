@@ -100,7 +100,7 @@ write_csv(full_roster, 'full_roster.csv')
 # people_data <- read_csv('people_data.csv')
 # full_roster <- read_csv('full_roster.csv')
 
-zip(zipfile = '../metadata.zip',
+zip(zipfile = 'metadata.zip',
     files = c('locations_data.csv',
               'households_data.csv',
               'people_data.csv',
