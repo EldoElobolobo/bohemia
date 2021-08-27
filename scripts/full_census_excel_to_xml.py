@@ -15,6 +15,6 @@ os.system('xls2xform fullcensus.xlsx fullcensus.xml')
 # move
 shutil.move('fullcensus.xml', '../forms/fullcensus/fullcensus.xml')
 shutil.move('fullcensus.xlsx', '../forms/fullcensus/fullcensus.xlsx')
-shutil.copy('../scripts/odk_collect_migration/metadata.zip', '../forms/fullcensus/metadata.zip')
+shutil.copy('../scripts/odk_collect_migration/odk_collect_migrations_files/metadata.zip', '../forms/fullcensus/metadata.zip')
 
 print('Done. Careful, the metadata.zip came from scripts/odk_collect_migration/code.R, not from the xlsform definition.\nAlso, it should not be shared (might contain private data).')
